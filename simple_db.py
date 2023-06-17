@@ -15,22 +15,26 @@ META_FILE = DATA_DIR / "meta.json"
 
 
 def main():
-    query = "SELECT * FROM dept_emp"
-    csv_dir = Path("/mnt/c/Users/danil/Desktop/employees")
-
     parser = argparse.ArgumentParser()
+    parser.add_argument("--execute", type=str, help="Execute query")
     parser.add_argument(
-        "--import-csv", type=str, help="Import CSV files from directory"
+        "--import-csv",
+        type=str,
+        help="Import CSV files from directory",
     )
     args = parser.parse_args()
 
     if args.import_csv:
+        csv_dir = Path(args.import_csv)
         import_csv(csv_dir)
-    else:
+    elif args.execute:
+        query = args.execute
         db = restore_db()
         select = parse_select(query)
         rs = select.execute(db)
         print(rs)
+    else:
+        parser.print_help()
 
 
 def import_csv(csv_dir: Path):

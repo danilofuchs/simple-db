@@ -23,7 +23,7 @@ class Select:
     table: str
     where: Optional[Where]
     order_by: Optional[OrderBy]
-    # limit: Optional[int] = 1000
+    limit: Optional[int]
 
     def execute(self, db: Database) -> ResultSet:
         table = db.get_table(self.table)
@@ -45,6 +45,9 @@ class Select:
                 reverse=self.order_by.direction == "desc",
             )
             rs.rows = rows
+
+        if self.limit:
+            rs.rows = rs.rows[: self.limit]
 
         return rs
 
@@ -98,4 +101,10 @@ def parse_select(query: str) -> Select:
             direction=parts[parts.index("order") + 3],
         )
 
-    return Select(fields=fields, table=table, where=where, order_by=order_by)
+    limit = 100
+    if "limit" in parts:
+        limit = int(parts[parts.index("limit") + 1])
+
+    return Select(
+        fields=fields, table=table, where=where, order_by=order_by, limit=limit
+    )
