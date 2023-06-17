@@ -1,46 +1,22 @@
 import argparse
 import csv
-from dataclasses import dataclass
 import dataclasses
 import json
 import os
 import glob
 from pathlib import Path
 import shutil
-from typing import Literal
+from db import Column, Database, Metadata, Table
+
+from query_select import parse_select
 
 DATA_DIR = Path(os.path.dirname(__file__)) / "db_data"
 META_FILE = DATA_DIR / "meta.json"
 
-ColumnType = Literal["int", "str", "date"]
-
-
-@dataclass
-class Column:
-    name: str
-    type: ColumnType
-
-
-@dataclass
-class Table:
-    name: str
-    columns: list[Column]
-
-
-@dataclass
-class Database:
-    name: str
-    tables: list[Table]
-
-
-@dataclass
-class Metadata:
-    database: Database
-
 
 def main():
-    query = "SELECT * FROM users WHERE id = 1"
-    csv_dir = "/mnt/c/Users/danil/Desktop/employees"
+    query = "SELECT * FROM dept_emp"
+    csv_dir = Path("/mnt/c/Users/danil/Desktop/employees")
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -50,25 +26,35 @@ def main():
 
     if args.import_csv:
         import_csv(csv_dir)
+    else:
+        db = restore_db()
+        select = parse_select(query)
+        rs = select.execute(db)
+        print(rs)
 
 
-def import_csv(csv_dir: str):
+def import_csv(csv_dir: Path):
     if not os.path.exists(DATA_DIR):
         os.makedirs(DATA_DIR)
 
     meta = Metadata(
         database=Database(
-            name=DATA_DIR.parts[-1],
+            name=csv_dir.parts[-1],
             tables=[],
         ),
     )
 
-    for file in glob.glob(csv_dir + "/*.csv"):
+    for file in glob.glob(str(csv_dir) + "/*.csv"):
         file_name = os.path.basename(file)
         table_name = file_name.split(".")[0]
 
-        shutil.copy(file, DATA_DIR / file_name)
-        table = Table(name=table_name, columns=[])
+        new_file = DATA_DIR / file_name
+        if new_file.exists():
+            print(f"File {file_name} already exists, will not overwrite")
+            continue
+
+        shutil.copy(file, new_file)
+        table = Table(name=table_name, columns=[], file=new_file)
 
         with open(file, "r") as f:
             print(f"Importing file {file_name}")
@@ -99,6 +85,29 @@ def import_csv(csv_dir: str):
     with open(META_FILE, "w") as f:
         f.write(json.dumps(dataclasses.asdict(meta), indent=2))
         print(f"Metadata file saved to {META_FILE}")
+
+
+def restore_db() -> Database:
+    if not os.path.exists(META_FILE):
+        raise ValueError("Database not initialized. Please import first")
+
+    with open(META_FILE, "r") as f:
+        meta = json.loads(f.read())
+
+    return Database(
+        name=meta["database"]["name"],
+        tables=[
+            Table(
+                name=table["name"],
+                columns=[
+                    Column(name=column["name"], type=column["type"])
+                    for column in table["columns"]
+                ],
+                file=DATA_DIR / table["file"],
+            )
+            for table in meta["database"]["tables"]
+        ],
+    )
 
 
 if __name__ == "__main__":
