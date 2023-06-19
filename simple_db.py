@@ -6,7 +6,8 @@ import os
 import glob
 from pathlib import Path
 import shutil
-from db import Column, Database, Metadata, Table
+from typing import cast
+from db import Column, ColumnType, Database, Metadata, Table
 
 from query_select import parse_select
 
@@ -30,7 +31,7 @@ def main():
     elif args.execute:
         query = args.execute
         db = restore_db()
-        select = parse_select(query)
+        select = parse_select(query, default_limit=100)
         select.validate(db)
         rs = select.execute(db)
         print(rs)
@@ -77,6 +78,7 @@ def import_csv(csv_dir: Path):
 
                 if col_type not in ["int", "str", "date"]:
                     raise ValueError("Invalid column type")
+                col_type = cast(ColumnType, col_type)
 
                 table.columns.append(
                     Column(

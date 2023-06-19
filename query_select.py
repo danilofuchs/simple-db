@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import List, Optional
+from datetime import datetime
+from typing import List, Optional, cast
 
-from db import Database, Direction, Operator, ResultSet
+from db import Column, Database, Direction, Operator, ResultSet
 
 
 @dataclass
@@ -53,22 +54,22 @@ class Select:
     def execute(self, db: Database) -> ResultSet:
         table = db.get_table(self.table)
 
+        rs = table.get_rows()
         if self.where:
-            rs = table.get_rows_where(
-                left_hand=self.where.left_hand,
-                right_hand=self.where.right_hand,
-                operator=self.where.operator,
-            )
-        else:
-            rs = table.get_rows()
+            col_index = rs.headers.index(self.where.left_hand)
+            rs.rows = [
+                row
+                for row in rs.rows
+                if self.__satisfies_condition(self.where, row, rs.columns)
+            ]
 
         if self.fields == ["*"]:
             self.fields = table.get_headers()
-            rs.headers = self.fields
+            rs.columns = table.columns
         else:
             col_indexes = [table.get_headers().index(field) for field in self.fields]
             rs.rows = [[row[i] for i in col_indexes] for row in rs.rows]
-            rs.headers = self.fields
+            rs.columns = [table.columns[i] for i in col_indexes]
 
         if self.order_by:
             if self.order_by.field not in rs.headers:
@@ -88,8 +89,56 @@ class Select:
 
         return rs
 
+    def __satisfies_condition(
+        self, where: Where, row: List[str], columns: List[Column]
+    ) -> bool:
+        left_hand_col, left_hand_val = ResultSet.get_value_of_column(
+            row, columns, where.left_hand
+        )
+        right_hand = where.right_hand
 
-def parse_select(query: str) -> Select:
+        if left_hand_col.type == "str":
+            if not (right_hand.startswith("'") and right_hand.endswith("'")) and not (
+                right_hand.startswith('"') and right_hand.endswith('"')
+            ):
+                raise ValueError(
+                    f"Invalid right hand: {right_hand} for string comparison"
+                )
+            right_hand = right_hand.strip("'").strip('"')
+
+        elif left_hand_col.type == "date":
+            if not (right_hand.startswith("'") and right_hand.endswith("'")) and not (
+                right_hand.startswith('"') and right_hand.endswith('"')
+            ):
+                raise ValueError(
+                    f"Invalid right hand: {right_hand} for date comparison"
+                )
+            right_hand = right_hand.strip("'").strip('"')
+            right_hand = datetime.strptime(right_hand, "%Y-%m-%d").date()
+
+        elif left_hand_col.type == "int":
+            try:
+                right_hand = int(right_hand)
+            except ValueError:
+                raise ValueError(f"Invalid right hand: {right_hand} for int comparison")
+
+        if where.operator == "=":
+            return left_hand_val == right_hand
+        elif where.operator == ">":
+            return left_hand_val > right_hand
+        elif where.operator == "<":
+            return left_hand_val < right_hand
+        elif where.operator == ">=":
+            return left_hand_val >= right_hand
+        elif where.operator == "<=":
+            return left_hand_val <= right_hand
+        else:
+            raise ValueError(
+                f"Invalid operator: {where.operator} for numeric comparison"
+            )
+
+
+def parse_select(query: str, default_limit: int) -> Select:
     """
     SELECT * FROM users WHERE id = 1 AND age > 18 ORDER BY id DESC
     """
@@ -119,10 +168,11 @@ def parse_select(query: str) -> Select:
         operator = parts[parts.index("where") + 2]
         if operator not in ["=", ">", "<", ">=", "<="]:
             raise ValueError(f"Invalid operator in WHERE clause ({operator})")
+        operator = cast(Operator, operator)
 
         where = Where(
             left_hand=parts[parts.index("where") + 1],
-            operator=parts[parts.index("where") + 2],
+            operator=operator,
             right_hand=parts[parts.index("where") + 3],
         )
 
@@ -133,12 +183,14 @@ def parse_select(query: str) -> Select:
         if direction not in ["asc", "desc"]:
             raise ValueError(f"Invalid direction in ORDER BY clause ({direction})")
 
+        direction = cast(Direction, direction)
+
         order_by = OrderBy(
             field=parts[parts.index("order") + 2],
-            direction=parts[parts.index("order") + 3],
+            direction=direction,
         )
 
-    limit = 100
+    limit = default_limit
     if "limit" in parts:
         limit = int(parts[parts.index("limit") + 1])
 
