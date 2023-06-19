@@ -31,6 +31,7 @@ def main():
         query = args.execute
         db = restore_db()
         select = parse_select(query)
+        select.validate(db)
         rs = select.execute(db)
         print(rs)
     else:

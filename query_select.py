@@ -25,6 +25,31 @@ class Select:
     order_by: Optional[OrderBy]
     limit: Optional[int]
 
+    def validate(self, db: Database) -> None:
+        if self.table not in [table.name for table in db.tables]:
+            raise ValueError(f"Invalid table: {self.table}")
+
+        if self.where:
+            if self.where.left_hand not in db.get_table(self.table).get_headers():
+                raise ValueError(
+                    f"Invalid column: {self.where.left_hand} in table {self.table}"
+                )
+
+        if self.order_by:
+            if self.order_by.field not in db.get_table(self.table).get_headers():
+                raise ValueError(
+                    f"Invalid column: {self.order_by.field} in table {self.table}"
+                )
+
+        if self.limit:
+            if self.limit < 0:
+                raise ValueError(f"Invalid limit: {self.limit}")
+
+        if self.fields != ["*"]:
+            for field in self.fields:
+                if field not in db.get_table(self.table).get_headers():
+                    raise ValueError(f"Invalid column: {field} in table {self.table}")
+
     def execute(self, db: Database) -> ResultSet:
         table = db.get_table(self.table)
 
@@ -37,7 +62,19 @@ class Select:
         else:
             rs = table.get_rows()
 
+        if self.fields == ["*"]:
+            self.fields = table.get_headers()
+            rs.headers = self.fields
+        else:
+            col_indexes = [table.get_headers().index(field) for field in self.fields]
+            rs.rows = [[row[i] for i in col_indexes] for row in rs.rows]
+            rs.headers = self.fields
+
         if self.order_by:
+            if self.order_by.field not in rs.headers:
+                raise ValueError(
+                    f"Invalid column: {self.order_by.field} in table {self.table}"
+                )
             col_index = rs.headers.index(self.order_by.field)
             rows = sorted(
                 rs.rows,

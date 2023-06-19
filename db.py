@@ -1,7 +1,8 @@
 import csv
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
-from typing import List, Literal
+from typing import Any, List, Literal
 from tabulate import tabulate
 
 
@@ -18,6 +19,7 @@ class Column:
 
 @dataclass
 class ResultSet:
+    table_name: str
     headers: List[str]
     rows: List[List[str]]
 
@@ -32,20 +34,38 @@ class Table:
     file: Path
 
     def get_headers(self) -> List[str]:
-        return [column.name for column in self.columns]
+        return [column.name.lower() for column in self.columns]
 
     def get_rows(self) -> ResultSet:
         with open(self.file, "r") as f:
-            csv_reader = csv.DictReader(f)
+            csv_reader = csv.reader(f)
+            next(csv_reader, None)  # skip the headers
+
+            rows = []
+            for row in csv_reader:
+                parsed = []
+                for i, col in enumerate(row):
+                    parsed.append(self.__parse_value(col, self.columns[i]))
+                rows.append(parsed)
+
             return ResultSet(
-                headers=csv_reader.fieldnames,
-                rows=[list(row.values()) for row in csv_reader],
+                table_name=self.name,
+                headers=self.get_headers(),
+                rows=rows,
             )
+
+    def __parse_value(self, value: str, column: Column) -> Any:
+        if column.type == "int":
+            return int(value)
+        elif column.type == "date":
+            return datetime.strptime(value, "%Y-%m-%d")
+        else:
+            return value
 
     def get_rows_where(
         self, left_hand: str, right_hand: str, operator: Operator
     ) -> ResultSet:
-        return ResultSet(headers=self.get_headers(), rows=[])
+        return ResultSet(table_name=self.name, headers=self.get_headers(), rows=[])
 
 
 @dataclass
