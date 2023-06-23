@@ -78,6 +78,23 @@ poetry run python simple_db.py --execute "SELECT * FROM employees WHERE gender =
 ```
 
 ```
+poetry run python simple_db.py --execute "SELECT * FROM employees WHERE hire_date > birth_date LIMIT 10"
+
+  __id    emp_no  birth_date           first_name    last_name    gender    hire_date
+------  --------  -------------------  ------------  -----------  --------  -------------------
+     0     10001  1953-09-02 00:00:00  Georgi        Facello      M         1986-06-26 00:00:00
+     1     10002  1964-06-02 00:00:00  Bezalel       Simmel       F         1985-11-21 00:00:00
+     2     10003  1959-12-03 00:00:00  Parto         Bamford      M         1986-08-28 00:00:00
+     3     10004  1954-05-01 00:00:00  Chirstian     Koblick      M         1986-12-01 00:00:00
+     4     10005  1955-01-21 00:00:00  Kyoichi       Maliniak     M         1989-09-12 00:00:00
+     5     10006  1953-04-20 00:00:00  Anneke        Preusig      F         1989-06-02 00:00:00
+     6     10007  1957-05-23 00:00:00  Tzvetan       Zielinski    F         1989-02-10 00:00:00
+     7     10008  1958-02-19 00:00:00  Saniya        Kalloufi     M         1994-09-15 00:00:00
+     8     10009  1952-04-19 00:00:00  Sumant        Peac         F         1985-02-18 00:00:00
+     9     10010  1963-06-01 00:00:00  Duangkaew     Piveteau     F         1989-08-24 00:00:00
+```
+
+```
 poetry run python simple_db.py --execute 'SELECT departments.dept_no, dept_manager.emp_no FROM departments JOIN dept_manager ON dept_manager.dept_no = departments.dept_no WHERE dept_manager.dept_no = "d006"'
 
 departments.dept_no      dept_manager.emp_no

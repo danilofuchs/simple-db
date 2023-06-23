@@ -39,14 +39,6 @@ class ResultSet:
     def headers(self) -> List[str]:
         return [column.name.lower() for column in self.columns]
 
-    @staticmethod
-    @functools.lru_cache(maxsize=None)
-    def get_column_index(column_names: Tuple[str], name: str) -> int:
-        try:
-            return column_names.index(name)
-        except ValueError:
-            raise ValueError(f"Column {name} not found")
-
     def inner_join(self, other: "ResultSet", on: Where) -> "ResultSet":
         new_rows = []
         joined_columns = tuple(self.columns + other.columns)
@@ -112,24 +104,24 @@ class ResultSet:
     def __satisfies_condition(
         self, where: Where, row: Row, columns: Tuple[Column], column_names: Tuple[str]
     ) -> bool:
-        i = ResultSet.get_column_index(column_names, where.left_hand)
+        i = get_column_index(column_names, where.left_hand)
         left_hand_val = row[i]
         left_hand_col = columns[i]
 
         try:
-            i = ResultSet.get_column_index(column_names, where.left_hand)
+            i = get_column_index(column_names, where.right_hand)
             right_hand_val = row[i]
         except ValueError:
+            # If the right hand is not a column, it must be a value
             right_hand_val = where.right_hand
-
-        if left_hand_col.type == "str":
-            right_hand_val = right_hand_val.strip("'").strip('"')
-        elif left_hand_col.type == "int":
-            right_hand_val = int(right_hand_val)
-        elif left_hand_col.type == "float":
-            right_hand_val = float(right_hand_val)
-        elif left_hand_col.type == "datetime":
-            right_hand_val = datetime.fromisoformat(right_hand_val)
+            if left_hand_col.type == "str":
+                right_hand_val = right_hand_val.strip("'").strip('"')
+            elif left_hand_col.type == "int":
+                right_hand_val = int(right_hand_val)
+            elif left_hand_col.type == "float":
+                right_hand_val = float(right_hand_val)
+            elif left_hand_col.type == "datetime":
+                right_hand_val = to_datetime(right_hand_val.strip("'").strip('"'))
 
         if where.operator == "=":
             return left_hand_val == right_hand_val
@@ -281,6 +273,19 @@ class Metadata:
         )
 
 
+@functools.lru_cache(maxsize=None)
+def get_column_index(column_names: Tuple[str], name: str) -> int:
+    try:
+        return column_names.index(name)
+    except ValueError:
+        raise ValueError(f"Column {name} not found")
+
+
+@functools.lru_cache(maxsize=None)
+def to_datetime(value: str) -> datetime:
+    return datetime.fromisoformat(value)
+
+
 def validate_where(
     where: Where, db: Database, headers: List[str], table_name: str
 ) -> None:
@@ -289,10 +294,6 @@ def validate_where(
 
     if left_hand not in headers:
         raise ValueError(f"Invalid column for where: {left_hand}")
-
-    left_table_name = left_hand.split(".")[0]
-    if left_table_name not in [table.name for table in db.tables]:
-        raise ValueError(f"Invalid table in where: {left_table_name}")
 
     if "." in left_hand:
         left_table_name, left_hand_col_name = left_hand.split(".")
