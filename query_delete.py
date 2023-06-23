@@ -30,11 +30,9 @@ class Delete:
         rs = table.read()
 
         if self.where:
-            rs.apply_where(self.where)
+            rs = rs.apply_where(self.where)
 
-        affected = 0
-
-        return affected
+        return len(rs.rows)
 
 
 def parse_delete(query: str) -> Delete:

@@ -1,10 +1,13 @@
 import csv
 from dataclasses import dataclass
+import dataclasses
 from datetime import datetime
+import json
+import os
 from pathlib import Path
 from typing import Any, List, Literal, Tuple
 from tabulate import tabulate
-from config import DATA_DIR
+from config import DATA_DIR, META_FILE
 
 from query import Where
 
@@ -45,16 +48,13 @@ class ResultSet:
 
         raise ValueError(f"Column {name} not found")
 
-    def apply_where(self, where: Where) -> List[int]:
+    def apply_where(self, where: Where) -> "ResultSet":
         new_rows = []
-        indexes_to_remove = []
-        for i, row in enumerate(self.rows):
+        for row in self.rows:
             if self.__satisfies_condition(where, row, self.columns):
                 new_rows.append(row)
-            else:
-                indexes_to_remove.append(i)
-        self.rows = new_rows
-        return indexes_to_remove
+
+        return ResultSet(self.table_name, self.columns, new_rows)
 
     def __satisfies_condition(
         self, where: Where, row: List[str], columns: List[Column]
@@ -147,7 +147,7 @@ class Table:
                 rows=rows,
             )
 
-    def save(self, rs: ResultSet) -> None:
+    def write(self, rs: ResultSet) -> None:
         if rs.table_name != self.name:
             raise ValueError(f"Cannot save ResultSet from table {rs.table_name}")
 
@@ -171,6 +171,17 @@ class Table:
                 return column
 
         raise ValueError(f"Column {name} not found")
+
+    def create_row(self, values: List[str]) -> Row:
+        if len(values) != len(self.columns) - 1:
+            raise ValueError("Invalid number of values")
+
+        row = [self.next_id]
+        for i, value in enumerate(values):
+            row.append(self.__parse_value(value, self.columns[i + 1]))
+        self.next_id += 1
+
+        return row
 
     def __parse_value(self, value: str, column: Column) -> Any:
         if column.type == "int":
@@ -199,3 +210,33 @@ class Database:
 @dataclass
 class Metadata:
     database: Database
+
+    def save(self):
+        with open(META_FILE, "w") as f:
+            f.write(json.dumps(dataclasses.asdict(self), indent=2))
+
+    @staticmethod
+    def load() -> "Metadata":
+        if not os.path.exists(META_FILE):
+            raise ValueError("Database not initialized. Please import first")
+
+        with open(META_FILE, "r") as f:
+            meta = json.loads(f.read())
+
+        return Metadata(
+            database=Database(
+                name=meta["database"]["name"],
+                tables=[
+                    Table(
+                        name=table["name"],
+                        columns=[
+                            Column(name=column["name"], type=column["type"])
+                            for column in table["columns"]
+                        ],
+                        file=table["file"],
+                        next_id=table["next_id"],
+                    )
+                    for table in meta["database"]["tables"]
+                ],
+            ),
+        )

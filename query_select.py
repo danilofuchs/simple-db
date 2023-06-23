@@ -49,7 +49,7 @@ class Select:
 
         rs = table.read()
         if self.where:
-            rs.apply_where(self.where)
+            rs = rs.apply_where(self.where)
 
         if self.fields == ["*"]:
             self.fields = table.headers

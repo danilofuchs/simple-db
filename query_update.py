@@ -55,16 +55,22 @@ class Update:
 
         rs = table.read()
 
-        affected = 0
+        if self.where:
+            filtered = rs.apply_where(self.where)
+        else:
+            filtered = rs
+
+        affected_ids = [row[0] for row in filtered.rows]
 
         for row in rs.rows:
-            for field_index, field in enumerate(self.fields):
-                col_index = table.headers.index(field)
-                row[col_index] = self.values[field_index]
-                affected += 1
+            if row[0] in affected_ids:
+                for field_index, field in enumerate(self.fields):
+                    col_index = table.headers.index(field)
+                    row[col_index] = self.values[field_index]
 
-            table.save(rs)
-        return affected
+        table.write(rs)
+
+        return len(rs.rows)
 
 
 def parse_update(query: str) -> Update:

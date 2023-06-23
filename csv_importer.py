@@ -23,7 +23,7 @@ def import_csv(csv_dir: Path):
             tables=[],
         ),
     )
-    __save_meta(meta)
+    meta.save()
 
     for file in glob.glob(str(csv_dir) + "/*.csv"):
         file_name = os.path.basename(file)
@@ -90,7 +90,8 @@ def import_csv(csv_dir: Path):
 
                 rows.append(imported)
 
-            table.save(
+            table.next_id += 1
+            table.write(
                 ResultSet(
                     table_name=table_name,
                     columns=table.columns,
@@ -99,10 +100,4 @@ def import_csv(csv_dir: Path):
             )
 
         meta.database.tables.append(table)
-        __save_meta(meta)
-
-
-def __save_meta(meta: Metadata) -> None:
-    with open(META_FILE, "w") as f:
-        f.write(json.dumps(dataclasses.asdict(meta), indent=2))
-        print(f"Metadata file saved to {META_FILE.as_posix()}")
+        meta.save()
