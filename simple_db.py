@@ -108,7 +108,7 @@ def main():
                 else:
                     print(f"Deleted {len(affected)} rows: __id={affected}")
         except ValueError as e:
-            print(f"[ERROR] {e} {query} {traceback.format_exc()}")
+            print(f"[ERROR] {e} \n\n {traceback.format_exc()}")
     else:
         parser.print_help()
 

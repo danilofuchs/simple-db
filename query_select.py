@@ -30,50 +30,30 @@ class Select:
             raise ValueError(f"Invalid table: {self.table}")
 
         table = db.get_table(self.table)
+        headers = table.headers
 
         if self.join_table:
             if self.join_table not in [table.name for table in db.tables]:
                 raise ValueError(f"Invalid table: {self.join_table}")
 
             join_table = db.get_table(self.join_table)
+            headers = table.prefixed_headers + join_table.prefixed_headers
 
             if not self.join_on:
                 raise ValueError("JOIN without ON")
 
-            if (
-                self.join_on.left_hand
-                not in table.prefixed_headers + join_table.prefixed_headers
-            ):
-                raise ValueError(
-                    f"Invalid column: {self.join_on.left_hand} in table {self.table}"
-                )
-            if (
-                self.join_on.right_hand
-                not in table.prefixed_headers + join_table.prefixed_headers
-            ):
-                raise ValueError(
-                    f"Invalid column: {self.join_on.right_hand} in table {self.table}"
-                )
+            if self.join_on.left_hand not in headers:
+                raise ValueError(f"Invalid column for join: {self.join_on.left_hand}")
+            if self.join_on.right_hand not in headers:
+                raise ValueError(f"Invalid column for join: {self.join_on.right_hand}")
 
         if self.where:
-            if self.is_join:
-                join_table = db.get_table(self.join_table)
-                if (
-                    self.where.left_hand
-                    not in table.prefixed_headers + join_table.prefixed_headers
-                ):
-                    raise ValueError(f"Invalid column: {self.where.left_hand}")
-
-            elif self.where.left_hand not in db.get_table(self.table).headers:
-                raise ValueError(
-                    f"Invalid column: {self.where.left_hand} in table {self.table}"
-                )
+            if self.where.left_hand not in headers:
+                raise ValueError(f"Invalid column for where: {self.where.left_hand}")
 
         if self.order_by:
-            if self.order_by.field not in db.get_table(self.table).headers:
-                raise ValueError(
-                    f"Invalid column: {self.order_by.field} in table {self.table}"
-                )
+            if self.order_by.field not in headers:
+                raise ValueError(f"Invalid column for limit: {self.order_by.field}")
 
         if self.limit:
             if self.limit < 0:
@@ -82,15 +62,11 @@ class Select:
         if self.fields != ["*"]:
             for field in self.fields:
                 if "." in field:
-                    table, field = field.split(".")
-                    if table not in [table.name for table in db.tables]:
-                        raise ValueError(f"Invalid table: {table}")
-                    if field not in db.get_table(table).headers:
-                        raise ValueError(
-                            f"Invalid column: {field} in table {self.table}"
-                        )
-                elif field not in db.get_table(self.table).headers:
-                    raise ValueError(f"Invalid column: {field} in table {self.table}")
+                    table_name = field.split(".")[0]
+                    if table_name not in [table.name for table in db.tables]:
+                        raise ValueError(f"Invalid table in field: {table_name}")
+                if field not in headers:
+                    raise ValueError(f"Invalid column: {field}")
 
     def execute(self, db: Database) -> ResultSet:
         table = db.get_table(self.table)

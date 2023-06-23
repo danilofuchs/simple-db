@@ -217,9 +217,8 @@ def test_complex_select():
     assert (
         parse_select(
             """
-        SELECT * FROM employees
-            JOIN salaries
-                ON employees.emp_no = salaries.emp_no
+            SELECT employees.last_name, salaries.salary FROM employees
+            JOIN salaries ON employees.emp_no = salaries.emp_no
             WHERE employees.gender = 'M'
             AND employees.hire_date > '1989-01-01'
             ORDER BY employees.hire_date DESC
@@ -227,7 +226,7 @@ def test_complex_select():
         """
         )
         == Select(
-            fields=["*"],
+            fields=["employees.last_name", "salaries.salary"],
             table="employees",
             join_table="salaries",
             join_on=Where(
