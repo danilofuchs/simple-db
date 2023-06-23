@@ -137,8 +137,12 @@ class Select:
                 f"Invalid operator: {where.operator} for numeric comparison"
             )
 
+    def set_default_limit(self, limit: int) -> None:
+        if not self.limit:
+            self.limit = limit
 
-def parse_select(query: str, default_limit: int) -> Select:
+
+def parse_select(query: str) -> Select:
     """
     SELECT * FROM users WHERE id = 1 AND age > 18 ORDER BY id DESC
     """
@@ -190,7 +194,7 @@ def parse_select(query: str, default_limit: int) -> Select:
             direction=direction,
         )
 
-    limit = default_limit
+    limit = None
     if "limit" in parts:
         limit = int(parts[parts.index("limit") + 1])
 

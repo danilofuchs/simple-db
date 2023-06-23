@@ -7,6 +7,7 @@ def test_select_star():
         table="users",
         where=None,
         order_by=None,
+        limit=None,
     )
 
 
@@ -16,6 +17,7 @@ def test_lowercase():
         table="users",
         where=None,
         order_by=None,
+        limit=None,
     )
 
 
@@ -25,6 +27,7 @@ def test_anycase():
         table="users",
         where=None,
         order_by=None,
+        limit=None,
     )
 
 
@@ -34,6 +37,7 @@ def test_select_fields():
         table="users",
         where=None,
         order_by=None,
+        limit=None,
     )
 
 
@@ -43,6 +47,7 @@ def test_select_fields_no_spaces():
         table="users",
         where=None,
         order_by=None,
+        limit=None,
     )
 
 
@@ -52,6 +57,7 @@ def test_select_where_id_equals():
         table="users",
         where=Where(left_hand="id", right_hand="1", operator="="),
         order_by=None,
+        limit=None,
     )
 
 
@@ -61,10 +67,22 @@ def test_select_order_by():
         table="users",
         where=None,
         order_by=OrderBy(field="age", direction="asc"),
+        limit=None,
     )
     assert parse_select("SELECT * FROM users ORDER BY age DESC") == Select(
         fields=["*"],
         table="users",
         where=None,
         order_by=OrderBy(field="age", direction="desc"),
+        limit=None,
+    )
+
+
+def test_select_limit():
+    assert parse_select("SELECT * FROM users LIMIT 10") == Select(
+        fields=["*"],
+        table="users",
+        where=None,
+        order_by=None,
+        limit=10,
     )

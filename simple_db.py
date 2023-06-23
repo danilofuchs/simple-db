@@ -31,7 +31,8 @@ def main():
     elif args.execute:
         query = args.execute
         db = restore_db()
-        select = parse_select(query, default_limit=100)
+        select = parse_select(query)
+        select.set_default_limit(100)
         select.validate(db)
         rs = select.execute(db)
         print(rs)
