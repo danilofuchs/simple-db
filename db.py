@@ -1,6 +1,7 @@
 import csv
 from dataclasses import dataclass
 from datetime import datetime
+import fileinput
 from pathlib import Path
 from typing import Any, List, Literal, Tuple
 from tabulate import tabulate
@@ -77,6 +78,13 @@ class Table:
                 return column
 
         raise ValueError(f"Column {name} not found")
+
+    def save_row(self, row: Row, index: int) -> None:
+        with open(self.file, "r+") as f:
+            for line_index, line in enumerate(f):
+                print(line_index, line, index)
+                if line_index - 1 == index:
+                    f.write(",".join(row) + "\n")
 
     def __parse_value(self, value: str, column: Column) -> Any:
         if column.type == "int":

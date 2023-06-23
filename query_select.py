@@ -3,13 +3,7 @@ from datetime import datetime
 from typing import List, Optional, cast
 
 from db import Column, Database, Direction, Operator, ResultSet
-
-
-@dataclass
-class Where:
-    left_hand: str
-    right_hand: str
-    operator: Operator
+from query import Where
 
 
 @dataclass
@@ -168,6 +162,7 @@ def parse_select(query: str) -> Select:
     table = parts[parts.index("from") + 1]
 
     where = None
+
     if "where" in parts:
         operator = parts[parts.index("where") + 2]
         if operator not in ["=", ">", "<", ">=", "<="]:

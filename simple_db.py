@@ -12,6 +12,7 @@ from query import QueryType, determine_query_type
 from query_insert import parse_insert
 
 from query_select import parse_select
+from query_update import parse_update
 
 DATA_DIR = Path(os.path.dirname(__file__)) / "db_data"
 META_FILE = DATA_DIR / "meta.json"
@@ -46,6 +47,12 @@ def main():
             insert = parse_insert(query)
             insert.validate(db)
             insert.execute(db)
+            print("Inserted row")
+        if type == QueryType.UPDATE:
+            update = parse_update(query)
+            update.validate(db)
+            update.execute(db)
+            print("Updated row")
     else:
         parser.print_help()
 

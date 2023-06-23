@@ -1,4 +1,5 @@
-from query_select import OrderBy, Select, Where, parse_select
+from query import Where
+from query_select import OrderBy, Select, parse_select
 
 
 def test_select_star():

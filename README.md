@@ -27,6 +27,14 @@ poetry run python simple_db.py --execute "SELECT * FROM EMPLOYEES LIMIT 10"
 
 ```
 poetry run python simple_db.py --execute "INSERT INTO departments(dept_no, dept_name) VALUES ('d999', 'Test department')"
+
+Inserted row
+```
+
+```
+poetry run python simple_db.py --execute "UPDATE departments SET dept_name = 'Test department 2' WHERE dept_no = 'd999'"
+
+Updated row
 ```
 
 ## Supported operations
