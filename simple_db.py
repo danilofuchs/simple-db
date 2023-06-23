@@ -1,21 +1,14 @@
 import argparse
-import csv
-import dataclasses
 import json
 import os
-import glob
 from pathlib import Path
-import shutil
-from typing import cast
-from db import Column, ColumnType, Database, Metadata, Table
+from config import META_FILE
+from csv_importer import import_csv
+from db import Column, Database, Table
 from query import QueryType, determine_query_type
 from query_insert import parse_insert
-
 from query_select import parse_select
 from query_update import parse_update
-
-DATA_DIR = Path(os.path.dirname(__file__)) / "db_data"
-META_FILE = DATA_DIR / "meta.json"
 
 
 def main():
@@ -63,61 +56,6 @@ def main():
         parser.print_help()
 
 
-def import_csv(csv_dir: Path):
-    if not os.path.exists(DATA_DIR):
-        os.makedirs(DATA_DIR)
-
-    meta = Metadata(
-        database=Database(
-            name=csv_dir.parts[-1],
-            tables=[],
-        ),
-    )
-
-    for file in glob.glob(str(csv_dir) + "/*.csv"):
-        file_name = os.path.basename(file)
-        table_name = file_name.split(".")[0]
-
-        new_file = DATA_DIR / file_name
-        if new_file.exists():
-            print(f"File {file_name} already exists, will not overwrite")
-            continue
-
-        shutil.copy(file, new_file)
-        table = Table(name=table_name, columns=[], file=new_file)
-
-        with open(file, "r") as f:
-            print(f"Importing file {file_name}")
-            reader = csv.DictReader(f)
-
-            if not reader.fieldnames:
-                print(f"File {file_name} is empty")
-                continue
-
-            for column in reader.fieldnames:
-                col_type = input(
-                    f"Enter type for column {table_name}.{column} (int, float, str (default), datetime): "
-                )
-                col_type = col_type or "str"
-
-                if col_type not in ["int", "float", "str", "datetime"]:
-                    raise ValueError("Invalid column type")
-                col_type = cast(ColumnType, col_type)
-
-                table.columns.append(
-                    Column(
-                        name=column,
-                        type=col_type,
-                    )
-                )
-
-        meta.database.tables.append(table)
-
-    with open(META_FILE, "w") as f:
-        f.write(json.dumps(dataclasses.asdict(meta), indent=2))
-        print(f"Metadata file saved to {META_FILE}")
-
-
 def restore_db() -> Database:
     if not os.path.exists(META_FILE):
         raise ValueError("Database not initialized. Please import first")
@@ -134,7 +72,8 @@ def restore_db() -> Database:
                     Column(name=column["name"], type=column["type"])
                     for column in table["columns"]
                 ],
-                file=DATA_DIR / table["file"],
+                file=table["file"],
+                next_id=table["next_id"],
             )
             for table in meta["database"]["tables"]
         ],

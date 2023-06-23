@@ -6,6 +6,13 @@ Created as a project for the Database course at the Federal Technological Univer
 
 Imports data from CSV files, MySQL or PostgreSQL databases.
 
+## Import from CSV
+
+```
+poetry run python simple_db.py --import-csv "employees"
+
+```
+
 ## Example queries
 
 ```
