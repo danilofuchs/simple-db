@@ -61,12 +61,18 @@ class Update:
 
         affected_ids = [row[0] for row in filtered.rows]
 
+        new_rows = []
         for row in rs.rows:
             if row[0] in affected_ids:
+                mutable_row = list(row)
                 for field_index, field in enumerate(self.fields):
                     col_index = table.headers.index(field)
-                    row[col_index] = self.values[field_index]
+                    mutable_row[col_index] = self.values[field_index]
+                new_rows.append(mutable_row)
+            else:
+                new_rows.append(row)
 
+        rs.rows = tuple(new_rows)
         table.write(rs)
 
         return affected_ids

@@ -85,6 +85,14 @@ def __parse_condition(query_part: str):
     else:
         raise ValueError(f"Invalid WHERE clause ({query_part})")
 
+    left_hand = left_hand.strip()
+    right_hand = right_hand.strip()
+
+    if right_hand.startswith("'") and not right_hand.endswith("'"):
+        raise ValueError(f"Missing closing quote in WHERE clause ({query_part})")
+    elif right_hand.startswith('"') and not right_hand.endswith('"'):
+        raise ValueError(f"Missing closing quote in WHERE clause ({query_part})")
+
     return Where(
         left_hand=left_hand.strip(),
         right_hand=right_hand.strip(),

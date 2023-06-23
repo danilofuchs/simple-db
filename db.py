@@ -162,7 +162,7 @@ class Table:
                 parsed = []
                 for i, col in enumerate(row):
                     parsed.append(self.__parse_value(col, self.columns[i]))
-                rows.append(parsed)
+                rows.append(tuple(parsed))
 
             if prefixed:
                 columns = [

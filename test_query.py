@@ -67,3 +67,9 @@ def test_parse_and():
 def test_not_many_conditions():
     with pytest.raises(ValueError):
         parse_where("id = 1 AND name = 'Fuchs' OR age = 18")
+
+
+def test_parse_wrong_quotes():
+    with pytest.raises(ValueError):
+        a = parse_where("name = 'Fuchs")
+        print(a)
