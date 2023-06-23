@@ -6,6 +6,26 @@ Created as a project for the Database course at the Federal Technological Univer
 
 Imports data from CSV files, MySQL or PostgreSQL databases.
 
+Stores data internally in CSV files.
+
+## Supported operations
+
+- `SELECT` - select data from table
+  - `*` or column names
+  - `WHERE` - filter data
+    - One additional `AND` or `OR` condition
+    - `>`, `<`, `>=`, `<=`, `=`, `!=` operators
+  - `ORDER BY` - sort data
+  - `JOIN` (`ON`, `USING`) - inner join of two tables
+    - With explicit table names
+  - `LIMIT` - limit number of rows
+- `INSERT` - insert data into table
+  - One row at a time
+- `UPDATE` - update data in table
+  - With or without `WHERE` clause
+- `DELETE` - delete data from table
+  - With or without `WHERE` clause
+
 ## Import from CSV
 
 ```
@@ -27,6 +47,8 @@ poetry run python simple_db.py --import-mysql --database employees --password 12
 
 ## Example queries
 
+### SELECT
+
 ```
 poetry run python simple_db.py --execute "SELECT * FROM EMPLOYEES LIMIT 10"
 
@@ -44,6 +66,8 @@ poetry run python simple_db.py --execute "SELECT * FROM EMPLOYEES LIMIT 10"
    10010  1963-06-01    Duangkaew     Piveteau     F         1989-08-24
 ```
 
+### SELECT with WHERE
+
 ```
 poetry run python simple_db.py --execute 'SELECT * FROM EMPLOYEES WHERE birth_date > "1950-01-01" ORDER BY birth_date ASC LIMIT 10'
 
@@ -59,6 +83,8 @@ poetry run python simple_db.py --execute 'SELECT * FROM EMPLOYEES WHERE birth_da
    13944  1952-02-02 00:00:00  Takahito      Maierhofer    M         1989-01-18 00:00:00
    22614  1952-02-02 00:00:00  Dung          Madeira       M         1989-01-24 00:00:00
 ```
+
+### SELECT with WHERE AND
 
 ```
 poetry run python simple_db.py --execute "SELECT * FROM employees WHERE gender = 'M' AND hire_date > '1989-01-01' LIMIT 10"
@@ -77,6 +103,8 @@ poetry run python simple_db.py --execute "SELECT * FROM employees WHERE gender =
    10010  1963-06-01    Duangkaew     Piveteau     F         1989-08-24
 ```
 
+### SELECT with WHERE comparing two columns
+
 ```
 poetry run python simple_db.py --execute "SELECT * FROM employees WHERE hire_date > birth_date LIMIT 10"
 
@@ -94,6 +122,8 @@ poetry run python simple_db.py --execute "SELECT * FROM employees WHERE hire_dat
      9     10010  1963-06-01 00:00:00  Duangkaew     Piveteau     F         1989-08-24 00:00:00
 ```
 
+### SELECT with JOIN ON
+
 ```
 poetry run python simple_db.py --execute 'SELECT departments.dept_no, dept_manager.emp_no FROM departments JOIN dept_manager ON dept_manager.dept_no = departments.dept_no WHERE dept_manager.dept_no = "d006"'
 
@@ -104,6 +134,8 @@ d006                                  110765
 d006                                  110800
 d006                                  110854
 ```
+
+### SELECT with JOIN USING
 
 ```
  poetry run python simple_db.py --execute 'SELECT departments.dept_no, dept_manager.emp_no FROM departments JOIN dept_manager USING (dept_no) WHERE departments.dept_no = "d006"'
@@ -116,11 +148,15 @@ d006                                  110800
 d006                                  110854
 ```
 
+### INSERT
+
 ```
 poetry run python simple_db.py --execute "INSERT INTO departments(dept_no, dept_name) VALUES ('d999', 'Test department')"
 
 Inserted row
 ```
+
+### UPDATE
 
 ```
 poetry run python simple_db.py --execute "UPDATE departments SET dept_name = 'Test department 2' WHERE dept_no = 'd999'"
@@ -128,25 +164,15 @@ poetry run python simple_db.py --execute "UPDATE departments SET dept_name = 'Te
 Updated 1 row
 ```
 
+### DELETE
+
 ```
 poetry run python simple_db.py --execute "DELETE FROM departments WHERE dept_no = 'd999'"
 
 Deleted 1 row
 ```
 
-## Supported operations
-
-- `SELECT` - select data from table
-  - `WHERE` - filter data
-    - One `AND` or `OR` condition
-    - `>`, `<`, `>=`, `<=`, `=`, `!=` operators
-  - `ORDER BY` - sort data
-  - `JOIN` (`ON`, `USING`) - join tables
-- `INSERT` - insert data into table
-- `UPDATE` - update data in table
-- `DELETE` - delete data from table
-
-## Assignment
+## Assignment (Portuguese)
 
 O trabalho consiste no desenvolvimento de uma ferramenta de gerenciamento de bancos de dados, baseada em ingestão de dados de fontes externas e operações e consultas processadas nas tabelas.
 
