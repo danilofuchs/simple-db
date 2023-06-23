@@ -7,7 +7,11 @@ from db import Column, Database, Metadata, ResultSet, Table
 
 
 def import_postgres(connection_string: str):
-    if not os.path.exists(DATA_DIR):
+    if os.path.exists(DATA_DIR):
+        if len(os.listdir(DATA_DIR)) > 0:
+            print("Data directory is not empty, will not overwrite")
+            return
+    else:
         os.makedirs(DATA_DIR)
 
     with psycopg.connect(connection_string) as conn:
@@ -29,6 +33,10 @@ def import_postgres(connection_string: str):
             table_names = cursor.fetchall()
             for table_name in table_names:
                 table_name = table_name[0].decode("utf-8")
+
+                ask = input(f"Import table {table_name}? (Y/n)")
+                if ask.lower() == "n":
+                    continue
 
                 file_name = f"{table_name}.csv"
                 new_file = DATA_DIR / file_name

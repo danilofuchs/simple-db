@@ -11,8 +11,11 @@ from typing import Any, List, cast
 
 
 def import_csv(csv_dir: Path):
-    print("Importing CSV files from directory", csv_dir)
-    if not os.path.exists(DATA_DIR):
+    if os.path.exists(DATA_DIR):
+        if len(os.listdir(DATA_DIR)) > 0:
+            print("Data directory is not empty, will not overwrite")
+            return
+    else:
         os.makedirs(DATA_DIR)
 
     meta = Metadata(
@@ -26,6 +29,10 @@ def import_csv(csv_dir: Path):
     for file in glob.glob(str(csv_dir) + "/*.csv"):
         file_name = os.path.basename(file)
         table_name = file_name.split(".")[0]
+
+        ask = input(f"Import file {file_name} as table {table_name}? (Y/n)")
+        if ask.lower() == "n":
+            continue
 
         new_file = DATA_DIR / file_name
         if new_file.exists():

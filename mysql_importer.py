@@ -8,7 +8,11 @@ from db import Column, Database, Metadata, ResultSet, Table
 
 
 def import_mysql(user: str, password: str, host: str, port: int, database: str):
-    if not os.path.exists(DATA_DIR):
+    if os.path.exists(DATA_DIR):
+        if len(os.listdir(DATA_DIR)) > 0:
+            print("Data directory is not empty, will not overwrite")
+            return
+    else:
         os.makedirs(DATA_DIR)
 
     with mysql.connector.connect(
@@ -36,6 +40,10 @@ def import_mysql(user: str, password: str, host: str, port: int, database: str):
             )
             table_names = cursor.fetchall()
             for (table_name,) in table_names:
+                ask = input(f"Import table {table_name}? (Y/n)")
+                if ask.lower() == "n":
+                    continue
+
                 file_name = f"{table_name}.csv"
                 new_file = DATA_DIR / file_name
                 if new_file.exists():
