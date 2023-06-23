@@ -38,6 +38,17 @@ def test_where():
     )
 
 
+def test_where_str():
+    assert parse_update(
+        "UPDATE users SET name = 'John' WHERE name = 'Johnson'"
+    ) == Update(
+        table="users",
+        fields=["name"],
+        values=["John"],
+        where=Where(left_hand="name", right_hand="'Johnson'", operator="="),
+    )
+
+
 def test_two_fields():
     assert parse_update(
         "UPDATE users SET name = 'John', age = 18 WHERE id = 1"

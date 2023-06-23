@@ -108,7 +108,7 @@ def parse_update(query: str) -> Update:
                 values.append(value.strip().strip('"'))
 
     where = None
-    where_part = re.search(r"where\s+(.*)", lower, re.IGNORECASE)
+    where_part = re.search(r"where\s+(.*)", query, re.IGNORECASE)
     if where_part is not None:
         where = parse_where(where_part.group(1))
 

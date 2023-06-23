@@ -13,16 +13,36 @@ class Where:
 
 
 def parse_where(query_part: str):
+    """
+    id = 1
+    name = 'Fuchs'
+    id=1
+    age > 18
+    salary <= 1000.00
+    """
     query_part = query_part.strip()
-    left_hand, operator, right_hand = query_part.split(" ")
 
-    if operator not in ["=", ">", "<", ">=", "<="]:
-        raise ValueError(f"Invalid operator in WHERE clause ({operator})")
-    operator = cast(Operator, operator)
+    if ">=" in query_part:
+        left_hand, right_hand = query_part.split(">=")
+        operator = ">="
+    elif "<=" in query_part:
+        left_hand, right_hand = query_part.split("<=")
+        operator = "<="
+    elif "=" in query_part:
+        left_hand, right_hand = query_part.split("=")
+        operator = "="
+    elif ">" in query_part:
+        left_hand, right_hand = query_part.split(">")
+        operator = ">"
+    elif "<" in query_part:
+        left_hand, right_hand = query_part.split("<")
+        operator = "<"
+    else:
+        raise ValueError(f"Invalid WHERE clause ({query_part})")
 
     return Where(
-        left_hand=left_hand,
-        right_hand=right_hand,
+        left_hand=left_hand.strip(),
+        right_hand=right_hand.strip(),
         operator=operator,
     )
 
