@@ -8,6 +8,8 @@ from pathlib import Path
 import shutil
 from typing import cast
 from db import Column, ColumnType, Database, Metadata, Table
+from query import QueryType, determine_query_type
+from query_insert import parse_insert
 
 from query_select import parse_select
 
@@ -31,11 +33,19 @@ def main():
     elif args.execute:
         query = args.execute
         db = restore_db()
-        select = parse_select(query)
-        select.set_default_limit(100)
-        select.validate(db)
-        rs = select.execute(db)
-        print(rs)
+
+        type = determine_query_type(query)
+
+        if type == QueryType.SELECT:
+            select = parse_select(query)
+            select.set_default_limit(100)
+            select.validate(db)
+            rs = select.execute(db)
+            print(rs)
+        if type == QueryType.INSERT:
+            insert = parse_insert(query)
+            insert.validate(db)
+            insert.execute(db)
     else:
         parser.print_help()
 

@@ -1,6 +1,10 @@
 from dataclasses import dataclass
+from datetime import datetime
+
 import re
 from typing import Any, List
+
+from db import Database
 
 
 @dataclass
@@ -8,6 +12,47 @@ class Insert:
     table: str
     fields: List[str]
     values: List[Any]
+
+    def validate(self, db: Database) -> None:
+        if len(self.fields) != len(self.values):
+            raise ValueError("Number of fields and values must match")
+
+        if self.table not in [table.name for table in db.tables]:
+            raise ValueError(f"Invalid table: {self.table}")
+
+        table = db.get_table(self.table)
+        for index, field in enumerate(self.fields):
+            if field not in table.get_headers():
+                raise ValueError(f"Invalid column: {field} in table {self.table}")
+
+            value = self.values[index]
+            col = table.get_column(field)
+            if col.type == "str" and not isinstance(value, str):
+                raise ValueError(f"Invalid type for column {field}: {type(value)}")
+            elif col.type == "int" and not isinstance(value, int):
+                raise ValueError(f"Invalid type for column {field}: {type(value)}")
+            elif col.type == "date":
+                if not isinstance(value, str):
+                    raise ValueError(f"Invalid type for column {field}: {type(value)}")
+
+                try:
+                    datetime.strptime(value, "%Y-%m-%d")
+                except ValueError:
+                    raise ValueError(f"Invalid date format for column {field}: {value}")
+
+    def execute(self, db: Database) -> None:
+        table = db.get_table(self.table)
+
+        with open(table.file, "a") as f:
+            f.write("\n")
+            for i, field in enumerate(table.get_headers()):
+                if field in self.fields:
+                    f.write(str(self.values[self.fields.index(field)]))
+                else:
+                    f.write("")
+
+                if i != len(table.get_headers()) - 1:
+                    f.write(",")
 
 
 def parse_insert(query: str) -> Insert:

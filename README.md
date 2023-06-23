@@ -25,6 +25,10 @@ poetry run python simple_db.py --execute "SELECT * FROM EMPLOYEES LIMIT 10"
    10010  1963-06-01    Duangkaew     Piveteau     F         1989-08-24
 ```
 
+```
+poetry run python simple_db.py --execute "INSERT INTO departments(dept_no, dept_name) VALUES ('d999', 'Test department')"
+```
+
 ## Supported operations
 
 - `SELECT` - select data from table

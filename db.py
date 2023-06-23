@@ -71,6 +71,13 @@ class Table:
                 rows=rows,
             )
 
+    def get_column(self, name: str) -> Column:
+        for column in self.columns:
+            if column.name == name:
+                return column
+
+        raise ValueError(f"Column {name} not found")
+
     def __parse_value(self, value: str, column: Column) -> Any:
         if column.type == "int":
             return int(value)
