@@ -48,7 +48,22 @@ class ResultSet:
 
         raise ValueError(f"Column {name} not found")
 
-    def apply_where(self, where: Where) -> "ResultSet":
+    def inner_join(self, other: "ResultSet", on: Where) -> "ResultSet":
+        new_rows = []
+        joined_columns = self.columns + other.columns
+        for row in self.rows:
+            for other_row in other.rows:
+                joined = row + other_row
+                if self.__satisfies_condition(on, joined, joined_columns):
+                    new_rows.append(joined)
+
+        return ResultSet(
+            f"{self.table_name} INNER JOIN {other.table_name}",
+            joined_columns,
+            new_rows,
+        )
+
+    def where(self, where: Where) -> "ResultSet":
         new_rows = []
         for row in self.rows:
             if self.__satisfies_condition(where, row, self.columns):
@@ -64,7 +79,17 @@ class ResultSet:
         )
         right_hand = where.right_hand
 
-        if left_hand_col.type == "str":
+        if not "'" in right_hand and not '"' in right_hand and not right_hand.isdigit():
+            right_hand_col, right_hand_val = ResultSet.get_value_of_column(
+                row, columns, right_hand
+            )
+            right_hand = right_hand_val
+
+            if left_hand_col.type != right_hand_col.type:
+                raise ValueError(
+                    f"Invalid comparison between {left_hand_col.type} and {right_hand_col.type}"
+                )
+        elif left_hand_col.type == "str":
             if not (right_hand.startswith("'") and right_hand.endswith("'")) and not (
                 right_hand.startswith('"') and right_hand.endswith('"')
             ):
@@ -129,7 +154,11 @@ class Table:
     def headers(self) -> List[str]:
         return [column.name.lower() for column in self.columns]
 
-    def read(self) -> ResultSet:
+    @property
+    def prefixed_headers(self) -> List[str]:
+        return [f"{self.name}.{column.name.lower()}" for column in self.columns]
+
+    def read(self, prefixed=False) -> ResultSet:
         with open(DATA_DIR / Path(self.file), "r") as f:
             csv_reader = csv.reader(f)
             next(csv_reader, None)  # skip the headers
@@ -141,9 +170,17 @@ class Table:
                     parsed.append(self.__parse_value(col, self.columns[i]))
                 rows.append(parsed)
 
+            if prefixed:
+                columns = [
+                    Column(f"{self.name}.{column.name}", column.type)
+                    for column in self.columns
+                ]
+            else:
+                columns = self.columns
+
             return ResultSet(
                 table_name=self.name,
-                columns=self.columns,
+                columns=columns,
                 rows=rows,
             )
 

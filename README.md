@@ -61,6 +61,17 @@ poetry run python simple_db.py --execute 'SELECT * FROM EMPLOYEES WHERE birth_da
 ```
 
 ```
+poetry run python simple_db.py --execute 'SELECT departments.dept_no, dept_manager.emp_no FROM departments JOIN dept_manager ON dept_manager.dept_no = departments.dept_no WHERE dept_manager.dept_no = "d006"'
+
+departments.dept_no      dept_manager.emp_no
+---------------------  ---------------------
+d006                                  110725
+d006                                  110765
+d006                                  110800
+d006                                  110854
+```
+
+```
 poetry run python simple_db.py --execute "INSERT INTO departments(dept_no, dept_name) VALUES ('d999', 'Test department')"
 
 Inserted row

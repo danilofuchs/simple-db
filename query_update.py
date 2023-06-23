@@ -56,7 +56,7 @@ class Update:
         rs = table.read()
 
         if self.where:
-            filtered = rs.apply_where(self.where)
+            filtered = rs.where(self.where)
         else:
             filtered = rs
 

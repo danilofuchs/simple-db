@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import traceback
 from config import META_FILE
 from csv_importer import import_csv
 from db import Column, Database, Metadata, Table
@@ -107,7 +108,7 @@ def main():
                 else:
                     print(f"Deleted {len(affected)} rows: __id={affected}")
         except ValueError as e:
-            print(f"[ERROR] {e}")
+            print(f"[ERROR] {e} {query} {traceback.format_exc()}")
     else:
         parser.print_help()
 

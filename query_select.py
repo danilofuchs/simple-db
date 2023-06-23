@@ -15,16 +15,56 @@ class OrderBy:
 class Select:
     fields: List[str]
     table: str
+    join_table: Optional[str]
+    join_on: Optional[Where]
     where: Optional[Where]
     order_by: Optional[OrderBy]
     limit: Optional[int]
+
+    @property
+    def is_join(self) -> bool:
+        return self.join_table is not None and self.join_on is not None
 
     def validate(self, db: Database) -> None:
         if self.table not in [table.name for table in db.tables]:
             raise ValueError(f"Invalid table: {self.table}")
 
+        table = db.get_table(self.table)
+
+        if self.join_table:
+            if self.join_table not in [table.name for table in db.tables]:
+                raise ValueError(f"Invalid table: {self.join_table}")
+
+            join_table = db.get_table(self.join_table)
+
+            if not self.join_on:
+                raise ValueError("JOIN without ON")
+
+            if (
+                self.join_on.left_hand
+                not in table.prefixed_headers + join_table.prefixed_headers
+            ):
+                raise ValueError(
+                    f"Invalid column: {self.join_on.left_hand} in table {self.table}"
+                )
+            if (
+                self.join_on.right_hand
+                not in table.prefixed_headers + join_table.prefixed_headers
+            ):
+                raise ValueError(
+                    f"Invalid column: {self.join_on.right_hand} in table {self.table}"
+                )
+
         if self.where:
-            if self.where.left_hand not in db.get_table(self.table).headers:
+            if self.is_join:
+                join_table = db.get_table(self.join_table)
+                if (
+                    self.where.left_hand
+                    not in table.prefixed_headers + join_table.prefixed_headers
+                ):
+                    raise ValueError(f"Invalid column: {self.where.left_hand}")
+
+            elif self.where.left_hand not in db.get_table(self.table).headers:
                 raise ValueError(
                     f"Invalid column: {self.where.left_hand} in table {self.table}"
                 )
@@ -41,23 +81,36 @@ class Select:
 
         if self.fields != ["*"]:
             for field in self.fields:
-                if field not in db.get_table(self.table).headers:
+                if "." in field:
+                    table, field = field.split(".")
+                    if table not in [table.name for table in db.tables]:
+                        raise ValueError(f"Invalid table: {table}")
+                    if field not in db.get_table(table).headers:
+                        raise ValueError(
+                            f"Invalid column: {field} in table {self.table}"
+                        )
+                elif field not in db.get_table(self.table).headers:
                     raise ValueError(f"Invalid column: {field} in table {self.table}")
 
     def execute(self, db: Database) -> ResultSet:
         table = db.get_table(self.table)
 
-        rs = table.read()
+        rs = table.read(prefixed=self.is_join)
+
+        if self.join_table and self.join_on:
+            join_table = db.get_table(self.join_table)
+            join_rs = join_table.read(prefixed=True)
+            rs = rs.inner_join(join_rs, self.join_on)
+
         if self.where:
-            rs = rs.apply_where(self.where)
+            rs = rs.where(self.where)
 
         if self.fields == ["*"]:
-            self.fields = table.headers
-            rs.columns = table.columns
+            self.fields = rs.headers
         else:
-            col_indexes = [table.headers.index(field) for field in self.fields]
+            col_indexes = [rs.headers.index(field) for field in self.fields]
             rs.rows = [[row[i] for i in col_indexes] for row in rs.rows]
-            rs.columns = [table.columns[i] for i in col_indexes]
+            rs.columns = [rs.columns[i] for i in col_indexes]
 
         if self.order_by:
             if self.order_by.field not in rs.headers:
@@ -108,8 +161,24 @@ def parse_select(query: str) -> Select:
 
     table = parts[parts.index("from") + 1]
 
-    where = None
+    join_table = None
+    join_on = None
+    if "join" in parts:
+        join_table = parts[parts.index("join") + 1]
+        join_on = lower.index("on")
+        try:
+            where = lower.index("where")
+        except ValueError:
+            where = None
 
+        if where:
+            text_between_on_and_where = query[join_on + 2 : where]
+        else:
+            text_between_on_and_where = query[join_on + 2 :]
+
+        join_on = parse_where(text_between_on_and_where)
+
+    where = None
     if "where" in parts:
         where = lower.index("where")
         try:
@@ -151,5 +220,11 @@ def parse_select(query: str) -> Select:
             raise ValueError(f"Invalid limit: {limit_str}")
 
     return Select(
-        fields=fields, table=table, where=where, order_by=order_by, limit=limit
+        fields=fields,
+        table=table,
+        join_table=join_table,
+        join_on=join_on,
+        where=where,
+        order_by=order_by,
+        limit=limit,
     )
