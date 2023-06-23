@@ -4,7 +4,7 @@ import re
 from typing import Literal, Optional
 
 
-Operator = Literal["=", ">", "<", ">=", "<="]
+Operator = Literal["=", ">", "<", ">=", "<=", "!="]
 
 
 @dataclass
@@ -76,6 +76,9 @@ def __parse_condition(query_part: str):
     elif "=" in query_part:
         left_hand, right_hand = query_part.split("=")
         operator = "="
+    elif "!=" in query_part:
+        left_hand, right_hand = query_part.split("!=")
+        operator = "!="
     elif ">" in query_part:
         left_hand, right_hand = query_part.split(">")
         operator = ">"

@@ -169,6 +169,24 @@ def test_select_join():
     )
 
 
+def test_select_using():
+    assert parse_select("SELECT * FROM users JOIN addresses USING (id)") == Select(
+        fields=["*"],
+        table="users",
+        join_table="addresses",
+        join_on=Where(
+            left_hand="users.id",
+            operator="=",
+            right_hand="addresses.id",
+            or_where=None,
+            and_where=None,
+        ),
+        where=None,
+        order_by=None,
+        limit=None,
+    )
+
+
 def test_select_join_fields():
     assert parse_select(
         "SELECT users.name, addresses.city FROM users JOIN addresses ON users.id = addresses.user_id"

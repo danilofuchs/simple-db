@@ -106,6 +106,17 @@ d006                                  110854
 ```
 
 ```
+ poetry run python simple_db.py --execute 'SELECT departments.dept_no, dept_manager.emp_no FROM departments JOIN dept_manager USING (dept_no) WHERE departments.dept_no = "d006"'
+
+departments.dept_no      dept_manager.emp_no
+---------------------  ---------------------
+d006                                  110725
+d006                                  110765
+d006                                  110800
+d006                                  110854
+```
+
+```
 poetry run python simple_db.py --execute "INSERT INTO departments(dept_no, dept_name) VALUES ('d999', 'Test department')"
 
 Inserted row
@@ -127,8 +138,10 @@ Deleted 1 row
 
 - `SELECT` - select data from table
   - `WHERE` - filter data
+    - One `AND` or `OR` condition
+    - `>`, `<`, `>=`, `<=`, `=`, `!=` operators
   - `ORDER BY` - sort data
-  - `INNER JOIN` - join tables
+  - `JOIN` (`ON`, `USING`) - join tables
 - `INSERT` - insert data into table
 - `UPDATE` - update data in table
 - `DELETE` - delete data from table

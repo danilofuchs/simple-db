@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import re
 from typing import List, Optional, cast
 
 from db import Database, Direction, ResultSet, validate_where
@@ -140,18 +141,54 @@ def parse_select(query: str) -> Select:
     join_on = None
     if "join" in parts:
         join_table = parts[parts.index("join") + 1]
-        join_on = lower.index("on")
         try:
-            where = lower.index("where")
+            on = lower.index("on")
         except ValueError:
-            where = None
+            on = None
 
-        if where:
-            text_between_on_and_where = query[join_on + 2 : where]
-        else:
-            text_between_on_and_where = query[join_on + 2 :]
+        try:
+            using = lower.index("using")
+        except ValueError:
+            using = None
 
-        join_on = parse_where(text_between_on_and_where)
+        if on and using:
+            raise ValueError("JOIN with both ON and USING")
+
+        if not on and not using:
+            raise ValueError("JOIN without ON or USING")
+
+        try:
+            next_keyword = (
+                lower.index("where") or lower.index("order") or lower.index("limit")
+            )
+        except ValueError:
+            next_keyword = None
+
+        if on:
+            if next_keyword:
+                text_between_on_and_next = query[on + 2 : next_keyword]
+            else:
+                text_between_on_and_next = query[on + 2 :]
+            join_on = parse_where(text_between_on_and_next)
+
+        elif using:
+            if next_keyword:
+                text_between_using_and_next = query[using + 5 : next_keyword]
+            else:
+                text_between_using_and_next = query[using + 5 :]
+
+            using_field = re.search(r"\(\s*(.*)\s*\)", text_between_using_and_next)
+            if using_field is None:
+                raise ValueError("Invalid USING")
+            using_field = using_field.group(1)
+
+            join_on = Where(
+                left_hand=table + "." + using_field,
+                operator="=",
+                right_hand=join_table + "." + using_field,
+                and_where=None,
+                or_where=None,
+            )
 
     where = None
     if "where" in parts:

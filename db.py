@@ -133,6 +133,8 @@ class ResultSet:
             return left_hand_val >= right_hand_val
         elif where.operator == "<=":
             return left_hand_val <= right_hand_val
+        elif where.operator == "!=":
+            return left_hand_val != right_hand_val
         else:
             raise ValueError(f"Invalid operator: {where.operator} for comparison")
 
