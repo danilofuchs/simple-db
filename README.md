@@ -26,11 +26,30 @@ Stores data internally in CSV files.
 - `DELETE` - delete data from table
   - With or without `WHERE` clause
 
+## Installation
+
+### Using Poetry (recommended)
+
+First, [install Poetry](https://python-poetry.org/docs/)
+
+Then, install dependencies:
+
+```
+poetry install
+```
+
+### Using pip
+
+```
+pip install -r requirements.txt
+```
+
+> To regenerate: `poetry export --with dev --without-hashes --format=requirements.txt -o requirements.txt`
+
 ## Import from CSV
 
 ```
 poetry run python simple_db.py --import-csv "employees"
-
 ```
 
 ## Import from Postgres
