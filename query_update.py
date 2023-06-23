@@ -77,7 +77,7 @@ def parse_update(query: str) -> Update:
     """
     UPDATE users SET name = 'John', age = 18 WHERE id = 1
     """
-    query = query.replace(";", "").replace("\n", " ").replace("\t", " ")
+    query = query.replace(";", "").replace("\n", " ").replace("\t", " ").strip()
     lower = query.lower()
 
     if not lower.startswith("update"):

@@ -68,7 +68,13 @@ def test_select_where_id_equals():
         table="users",
         join_table=None,
         join_on=None,
-        where=Where(left_hand="id", right_hand="1", operator="="),
+        where=Where(
+            left_hand="id",
+            right_hand="1",
+            operator="=",
+            or_where=None,
+            and_where=None,
+        ),
         order_by=None,
         limit=None,
     )
@@ -80,7 +86,13 @@ def test_select_str():
         table="users",
         join_table=None,
         join_on=None,
-        where=Where(left_hand="name", right_hand="'Fuchs'", operator="="),
+        where=Where(
+            left_hand="name",
+            right_hand="'Fuchs'",
+            operator="=",
+            or_where=None,
+            and_where=None,
+        ),
         order_by=None,
         limit=None,
     )
@@ -92,7 +104,13 @@ def test_select_str_doublequote():
         table="users",
         join_table=None,
         join_on=None,
-        where=Where(left_hand="name", right_hand='"Fuchs"', operator="="),
+        where=Where(
+            left_hand="name",
+            right_hand='"Fuchs"',
+            operator="=",
+            or_where=None,
+            and_where=None,
+        ),
         order_by=None,
         limit=None,
     )
@@ -139,7 +157,11 @@ def test_select_join():
         table="users",
         join_table="addresses",
         join_on=Where(
-            left_hand="users.id", operator="=", right_hand="addresses.user_id"
+            left_hand="users.id",
+            operator="=",
+            right_hand="addresses.user_id",
+            or_where=None,
+            and_where=None,
         ),
         where=None,
         order_by=None,
@@ -155,9 +177,83 @@ def test_select_join_fields():
         table="users",
         join_table="addresses",
         join_on=Where(
-            left_hand="users.id", operator="=", right_hand="addresses.user_id"
+            left_hand="users.id",
+            operator="=",
+            right_hand="addresses.user_id",
+            or_where=None,
+            and_where=None,
         ),
         where=None,
         order_by=None,
         limit=None,
+    )
+
+
+def test_select_where_or():
+    assert parse_select("SELECT * FROM users WHERE id = 1 OR id = 2") == Select(
+        fields=["*"],
+        table="users",
+        join_table=None,
+        join_on=None,
+        where=Where(
+            left_hand="id",
+            right_hand="1",
+            operator="=",
+            or_where=Where(
+                left_hand="id",
+                right_hand="2",
+                operator="=",
+                or_where=None,
+                and_where=None,
+            ),
+            and_where=None,
+        ),
+        order_by=None,
+        limit=None,
+    )
+
+
+def test_complex_select():
+    assert (
+        parse_select(
+            """
+        SELECT * FROM employees
+            JOIN salaries
+                ON employees.emp_no = salaries.emp_no
+            WHERE employees.gender = 'M'
+            AND employees.hire_date > '1989-01-01'
+            ORDER BY employees.hire_date DESC
+            LIMIT 10
+        """
+        )
+        == Select(
+            fields=["*"],
+            table="employees",
+            join_table="salaries",
+            join_on=Where(
+                left_hand="employees.emp_no",
+                right_hand="salaries.emp_no",
+                operator="=",
+                or_where=None,
+                and_where=None,
+            ),
+            where=Where(
+                left_hand="employees.gender",
+                right_hand="'M'",
+                operator="=",
+                or_where=None,
+                and_where=Where(
+                    left_hand="employees.hire_date",
+                    right_hand="'1989-01-01'",
+                    operator=">",
+                    or_where=None,
+                    and_where=None,
+                ),
+            ),
+            order_by=OrderBy(
+                field="employees.hire_date",
+                direction="desc",
+            ),
+            limit=10,
+        )
     )

@@ -12,7 +12,13 @@ def test_delete():
 def test_where():
     assert parse_delete("DELETE FROM users WHERE id = 1") == Delete(
         table="users",
-        where=Where(left_hand="id", right_hand="1", operator="="),
+        where=Where(
+            left_hand="id",
+            right_hand="1",
+            operator="=",
+            or_where=None,
+            and_where=None,
+        ),
     )
 
 
@@ -26,5 +32,11 @@ def test_lowercase():
 def test_where_str():
     assert parse_delete("DELETE FROM users WHERE name = 'Fuchs'") == Delete(
         table="users",
-        where=Where(left_hand="name", right_hand="'Fuchs'", operator="="),
+        where=Where(
+            left_hand="name",
+            right_hand="'Fuchs'",
+            operator="=",
+            or_where=None,
+            and_where=None,
+        ),
     )

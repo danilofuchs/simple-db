@@ -66,7 +66,19 @@ class ResultSet:
     def where(self, where: Where) -> "ResultSet":
         new_rows = []
         for row in self.rows:
-            if self.__satisfies_condition(where, row, self.columns):
+            if where.and_where:
+                if (
+                    self.__satisfies_condition(where, row, self.columns)
+                    and self.__satisfies_condition(where.and_where, row, self.columns)
+                ):
+                    new_rows.append(row)
+            elif where.or_where:
+                if (
+                    self.__satisfies_condition(where, row, self.columns)
+                    or self.__satisfies_condition(where.or_where, row, self.columns)
+                ):
+                    new_rows.append(row)
+            elif self.__satisfies_condition(where, row, self.columns):
                 new_rows.append(row)
 
         return ResultSet(self.table_name, self.columns, new_rows)

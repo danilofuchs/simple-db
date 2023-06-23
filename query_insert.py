@@ -57,7 +57,7 @@ def parse_insert(query: str) -> Insert:
     """
     INSERT INTO users (id, name) VALUES (1, "John")
     """
-    lower = query.lower().replace(";", "").replace("\n", " ").replace("\t", " ")
+    lower = query.lower().replace(";", "").replace("\n", " ").replace("\t", " ").strip()
 
     if not lower.startswith("insert into"):
         raise ValueError("Invalid query")

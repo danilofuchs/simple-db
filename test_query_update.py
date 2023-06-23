@@ -34,7 +34,13 @@ def test_where():
         table="users",
         fields=["name"],
         values=["John"],
-        where=Where(left_hand="id", right_hand="1", operator="="),
+        where=Where(
+            left_hand="id",
+            right_hand="1",
+            operator="=",
+            or_where=None,
+            and_where=None,
+        ),
     )
 
 
@@ -45,7 +51,13 @@ def test_where_str():
         table="users",
         fields=["name"],
         values=["John"],
-        where=Where(left_hand="name", right_hand="'Johnson'", operator="="),
+        where=Where(
+            left_hand="name",
+            right_hand="'Johnson'",
+            operator="=",
+            or_where=None,
+            and_where=None,
+        ),
     )
 
 
@@ -56,5 +68,11 @@ def test_two_fields():
         table="users",
         fields=["name", "age"],
         values=["John", 18],
-        where=Where(left_hand="id", right_hand="1", operator="="),
+        where=Where(
+            left_hand="id",
+            right_hand="1",
+            operator="=",
+            or_where=None,
+            and_where=None,
+        ),
     )

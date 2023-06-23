@@ -47,7 +47,7 @@ def parse_delete(query: str) -> Delete:
     """
     DELETE FROM users WHERE id = 1
     """
-    query = query.replace(";", "").replace("\n", " ").replace("\t", " ")
+    query = query.replace(";", "").replace("\n", " ").replace("\t", " ").strip()
     lower = query.lower()
 
     if not lower.startswith("delete from"):

@@ -139,7 +139,7 @@ def parse_select(query: str) -> Select:
     """
     SELECT * FROM users WHERE id = 1 AND age > 18 ORDER BY id DESC
     """
-    query = query.replace(";", "").replace("\n", " ").replace("\t", " ")
+    query = query.replace(";", "").replace("\n", " ").replace("\t", " ").strip()
     lower = query.lower()
     parts = lower.split(" ")
 
@@ -183,10 +183,17 @@ def parse_select(query: str) -> Select:
         where = lower.index("where")
         try:
             order_by = lower.index("order")
-            limit = lower.index("limit")
         except ValueError:
             order_by = None
+
+        try:
+            limit = lower.index("limit")
+        except ValueError:
             limit = None
+
+        if order_by and limit:
+            if limit < order_by:
+                raise ValueError("LIMIT must be after ORDER BY")
 
         if order_by:
             text_between_where_and_next_keyword = query[where + 5 : order_by]
