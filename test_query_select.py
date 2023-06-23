@@ -62,6 +62,26 @@ def test_select_where_id_equals():
     )
 
 
+def test_select_str():
+    assert parse_select("SELECT * FROM users WHERE name = 'Fuchs'") == Select(
+        fields=["*"],
+        table="users",
+        where=Where(left_hand="name", right_hand="'Fuchs'", operator="="),
+        order_by=None,
+        limit=None,
+    )
+
+
+def test_select_str_doublequote():
+    assert parse_select('SELECT * FROM users WHERE name = "Fuchs"') == Select(
+        fields=["*"],
+        table="users",
+        where=Where(left_hand="name", right_hand='"Fuchs"', operator="="),
+        order_by=None,
+        limit=None,
+    )
+
+
 def test_select_order_by():
     assert parse_select("SELECT * FROM users ORDER BY age ASC") == Select(
         fields=["*"],

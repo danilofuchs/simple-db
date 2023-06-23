@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import List, Optional, cast
 
 from db import Column, Database, Direction, Operator, ResultSet
-from query import Where
+from query import Where, parse_where
 
 
 @dataclass
@@ -100,21 +100,34 @@ class Select:
                 )
             right_hand = right_hand.strip("'").strip('"')
 
-        elif left_hand_col.type == "date":
+        elif left_hand_col.type == "datetime":
             if not (right_hand.startswith("'") and right_hand.endswith("'")) and not (
                 right_hand.startswith('"') and right_hand.endswith('"')
             ):
                 raise ValueError(
-                    f"Invalid right hand: {right_hand} for date comparison"
+                    f"Invalid right hand: {right_hand} for datetime comparison"
                 )
             right_hand = right_hand.strip("'").strip('"')
-            right_hand = datetime.strptime(right_hand, "%Y-%m-%d").date()
+            try:
+                right_hand = datetime.fromisoformat(right_hand)
+            except ValueError:
+                raise ValueError(
+                    f"Invalid right hand: {right_hand} for datetime comparison"
+                )
 
         elif left_hand_col.type == "int":
             try:
                 right_hand = int(right_hand)
             except ValueError:
                 raise ValueError(f"Invalid right hand: {right_hand} for int comparison")
+
+        elif left_hand_col.type == "float":
+            try:
+                right_hand = float(right_hand)
+            except ValueError:
+                raise ValueError(
+                    f"Invalid right hand: {right_hand} for float comparison"
+                )
 
         if where.operator == "=":
             return left_hand_val == right_hand
@@ -140,8 +153,9 @@ def parse_select(query: str) -> Select:
     """
     SELECT * FROM users WHERE id = 1 AND age > 18 ORDER BY id DESC
     """
-    query = query.lower().replace(";", "").replace("\n", " ").replace("\t", " ")
-    parts = query.split(" ")
+    query = query.replace(";", "").replace("\n", " ").replace("\t", " ")
+    lower = query.lower()
+    parts = lower.split(" ")
 
     if parts[0] != "select":
         raise ValueError("Invalid query")
@@ -164,16 +178,22 @@ def parse_select(query: str) -> Select:
     where = None
 
     if "where" in parts:
-        operator = parts[parts.index("where") + 2]
-        if operator not in ["=", ">", "<", ">=", "<="]:
-            raise ValueError(f"Invalid operator in WHERE clause ({operator})")
-        operator = cast(Operator, operator)
+        where = lower.index("where")
+        try:
+            order_by = lower.index("order")
+            limit = lower.index("limit")
+        except ValueError:
+            order_by = None
+            limit = None
 
-        where = Where(
-            left_hand=parts[parts.index("where") + 1],
-            operator=operator,
-            right_hand=parts[parts.index("where") + 3],
-        )
+        if order_by:
+            text_between_where_and_next_keyword = query[where + 5 : order_by]
+        elif limit:
+            text_between_where_and_next_keyword = query[where + 5 : limit]
+        else:
+            text_between_where_and_next_keyword = query[where + 5 :]
+
+        where = parse_where(text_between_where_and_next_keyword)
 
     order_by = None
     if "order" in parts:
@@ -191,7 +211,11 @@ def parse_select(query: str) -> Select:
 
     limit = None
     if "limit" in parts:
-        limit = int(parts[parts.index("limit") + 1])
+        limit_str = parts[parts.index("limit") + 1]
+        try:
+            limit = int(limit_str)
+        except ValueError:
+            raise ValueError(f"Invalid limit: {limit_str}")
 
     return Select(
         fields=fields, table=table, where=where, order_by=order_by, limit=limit

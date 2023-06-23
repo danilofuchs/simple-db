@@ -37,22 +37,25 @@ def main():
 
         type = determine_query_type(query)
 
-        if type == QueryType.SELECT:
-            select = parse_select(query)
-            select.set_default_limit(100)
-            select.validate(db)
-            rs = select.execute(db)
-            print(rs)
-        if type == QueryType.INSERT:
-            insert = parse_insert(query)
-            insert.validate(db)
-            insert.execute(db)
-            print("Inserted row")
-        if type == QueryType.UPDATE:
-            update = parse_update(query)
-            update.validate(db)
-            update.execute(db)
-            print("Updated row")
+        try:
+            if type == QueryType.SELECT:
+                select = parse_select(query)
+                select.set_default_limit(100)
+                select.validate(db)
+                rs = select.execute(db)
+                print(rs)
+            if type == QueryType.INSERT:
+                insert = parse_insert(query)
+                insert.validate(db)
+                insert.execute(db)
+                print("Inserted row")
+            if type == QueryType.UPDATE:
+                update = parse_update(query)
+                update.validate(db)
+                update.execute(db)
+                print("Updated row")
+        except ValueError as e:
+            print(f"[ERROR] {e}")
     else:
         parser.print_help()
 
@@ -90,11 +93,11 @@ def import_csv(csv_dir: Path):
 
             for column in reader.fieldnames:
                 col_type = input(
-                    f"Enter type for column {table_name}.{column} (default str): "
+                    f"Enter type for column {table_name}.{column} (int, float, str (default), datetime): "
                 )
                 col_type = col_type or "str"
 
-                if col_type not in ["int", "str", "date"]:
+                if col_type not in ["int", "float", "str", "datetime"]:
                     raise ValueError("Invalid column type")
                 col_type = cast(ColumnType, col_type)
 

@@ -26,6 +26,22 @@ poetry run python simple_db.py --execute "SELECT * FROM EMPLOYEES LIMIT 10"
 ```
 
 ```
+poetry run python simple_db.py --execute 'SELECT * FROM EMPLOYEES WHERE birth_date > "1950-01-01" ORDER BY birth_date ASC LIMIT 10'
+
+  emp_no  birth_date           first_name    last_name     gender    hire_date
+--------  -------------------  ------------  ------------  --------  -------------------
+   65308  1952-02-01 00:00:00  Jouni         Pocchiola     M         1985-03-10 00:00:00
+   87461  1952-02-01 00:00:00  Moni          Decaestecker  M         1986-10-06 00:00:00
+   91374  1952-02-01 00:00:00  Eishiro       Kuzuoka       M         1992-02-12 00:00:00
+  207658  1952-02-01 00:00:00  Kiyokazu      Whitcomb      M         1988-07-26 00:00:00
+  237571  1952-02-01 00:00:00  Ronghao       Schaad        M         1988-07-10 00:00:00
+  406121  1952-02-01 00:00:00  Supot         Remmele       M         1989-01-27 00:00:00
+   12282  1952-02-02 00:00:00  Tadahiro      Delgrange     M         1997-01-09 00:00:00
+   13944  1952-02-02 00:00:00  Takahito      Maierhofer    M         1989-01-18 00:00:00
+   22614  1952-02-02 00:00:00  Dung          Madeira       M         1989-01-24 00:00:00
+```
+
+```
 poetry run python simple_db.py --execute "INSERT INTO departments(dept_no, dept_name) VALUES ('d999', 'Test department')"
 
 Inserted row

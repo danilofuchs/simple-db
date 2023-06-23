@@ -1,13 +1,12 @@
 import csv
 from dataclasses import dataclass
 from datetime import datetime
-import fileinput
 from pathlib import Path
 from typing import Any, List, Literal, Tuple
 from tabulate import tabulate
 
 
-ColumnType = Literal["int", "str", "date"]
+ColumnType = Literal["int", "float", "str", "datetime"]
 Operator = Literal["=", ">", "<", ">=", "<="]
 Direction = Literal["asc", "desc"]
 
@@ -89,8 +88,10 @@ class Table:
     def __parse_value(self, value: str, column: Column) -> Any:
         if column.type == "int":
             return int(value)
-        elif column.type == "date":
-            return datetime.strptime(value, "%Y-%m-%d").date()
+        elif column.type == "float":
+            return float(value)
+        elif column.type == "datetime":
+            return datetime.fromisoformat(value)
         else:
             return value
 
