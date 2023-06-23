@@ -48,7 +48,7 @@ class Insert:
 
         rs = table.read()
 
-        rs.rows.append(table.create_row(self.values))
+        rs.rows = tuple(rs.rows + table.create_row(self.values))
 
         table.write(rs)
 

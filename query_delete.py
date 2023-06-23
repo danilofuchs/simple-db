@@ -36,7 +36,7 @@ class Delete:
 
         affected_ids = [row[0] for row in filtered.rows]
 
-        rs.rows = [row for row in rs.rows if row[0] not in affected_ids]
+        rs.rows = tuple(row for row in rs.rows if row[0] not in affected_ids)
 
         table.write(rs)
 

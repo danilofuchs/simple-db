@@ -3,6 +3,7 @@ from enum import Enum
 import re
 from typing import Literal, Optional
 
+
 Operator = Literal["=", ">", "<", ">=", "<="]
 
 
@@ -111,3 +112,9 @@ def determine_query_type(query: str):
         return QueryType.UPDATE
     elif query.startswith("delete"):
         return QueryType.DELETE
+
+
+def is_quoted_string(string: str) -> bool:
+    return (string[0] == '"' and string[-1] == '"') or (
+        string[0] == "'" and string[-1] == "'"
+    )

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Optional, cast
 
-from db import Database, Direction, ResultSet
+from db import Database, Direction, ResultSet, validate_where
 from query import Where, parse_where
 
 
@@ -48,8 +48,7 @@ class Select:
                 raise ValueError(f"Invalid column for join: {self.join_on.right_hand}")
 
         if self.where:
-            if self.where.left_hand not in headers:
-                raise ValueError(f"Invalid column for where: {self.where.left_hand}")
+            validate_where(self.where, db, headers, self.table)
 
         if self.order_by:
             if self.order_by.field not in headers:
@@ -85,8 +84,8 @@ class Select:
             self.fields = rs.headers
         else:
             col_indexes = [rs.headers.index(field) for field in self.fields]
-            rs.rows = [[row[i] for i in col_indexes] for row in rs.rows]
-            rs.columns = [rs.columns[i] for i in col_indexes]
+            rs.rows = tuple(tuple(row[i] for i in col_indexes) for row in rs.rows)
+            rs.columns = tuple(rs.columns[i] for i in col_indexes)
 
         if self.order_by:
             if self.order_by.field not in rs.headers:
@@ -99,7 +98,7 @@ class Select:
                 key=lambda row: row[col_index],
                 reverse=self.order_by.direction == "desc",
             )
-            rs.rows = rows
+            rs.rows = tuple(rows)
 
         if self.limit:
             rs.rows = rs.rows[: self.limit]
