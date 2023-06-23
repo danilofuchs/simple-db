@@ -44,16 +44,19 @@ def main():
                 select.validate(db)
                 rs = select.execute(db)
                 print(rs)
-            if type == QueryType.INSERT:
+            elif type == QueryType.INSERT:
                 insert = parse_insert(query)
                 insert.validate(db)
                 insert.execute(db)
                 print("Inserted row")
-            if type == QueryType.UPDATE:
+            elif type == QueryType.UPDATE:
                 update = parse_update(query)
                 update.validate(db)
-                update.execute(db)
-                print("Updated row")
+                affected = update.execute(db)
+                if affected == 1:
+                    print(f"Updated 1 row")
+                else:
+                    print(f"Updated {affected} rows")
         except ValueError as e:
             print(f"[ERROR] {e}")
     else:

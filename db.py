@@ -50,10 +50,11 @@ class Table:
     columns: List[Column]
     file: Path
 
-    def get_headers(self) -> List[str]:
+    @property
+    def headers(self) -> List[str]:
         return [column.name.lower() for column in self.columns]
 
-    def get_rows(self) -> ResultSet:
+    def read(self) -> ResultSet:
         with open(self.file, "r") as f:
             csv_reader = csv.reader(f)
             next(csv_reader, None)  # skip the headers
@@ -71,19 +72,30 @@ class Table:
                 rows=rows,
             )
 
+    def save(self, rs: ResultSet) -> None:
+        if rs.table_name != self.name:
+            raise ValueError(f"Cannot save ResultSet from table {rs.table_name}")
+
+        if rs.headers != self.headers:
+            raise ValueError("Columns do not match")
+
+        with open(self.file, "w") as f:
+            csv_writer = csv.writer(
+                f,
+                quotechar='"',
+                quoting=csv.QUOTE_MINIMAL,
+                delimiter=",",
+                lineterminator="\n",
+            )
+            csv_writer.writerow(self.headers)
+            csv_writer.writerows(rs.rows)
+
     def get_column(self, name: str) -> Column:
         for column in self.columns:
             if column.name == name:
                 return column
 
         raise ValueError(f"Column {name} not found")
-
-    def save_row(self, row: Row, index: int) -> None:
-        with open(self.file, "r+") as f:
-            for line_index, line in enumerate(f):
-                print(line_index, line, index)
-                if line_index - 1 == index:
-                    f.write(",".join(row) + "\n")
 
     def __parse_value(self, value: str, column: Column) -> Any:
         if column.type == "int":

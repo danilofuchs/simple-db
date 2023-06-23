@@ -25,13 +25,13 @@ class Select:
             raise ValueError(f"Invalid table: {self.table}")
 
         if self.where:
-            if self.where.left_hand not in db.get_table(self.table).get_headers():
+            if self.where.left_hand not in db.get_table(self.table).headers:
                 raise ValueError(
                     f"Invalid column: {self.where.left_hand} in table {self.table}"
                 )
 
         if self.order_by:
-            if self.order_by.field not in db.get_table(self.table).get_headers():
+            if self.order_by.field not in db.get_table(self.table).headers:
                 raise ValueError(
                     f"Invalid column: {self.order_by.field} in table {self.table}"
                 )
@@ -42,13 +42,13 @@ class Select:
 
         if self.fields != ["*"]:
             for field in self.fields:
-                if field not in db.get_table(self.table).get_headers():
+                if field not in db.get_table(self.table).headers:
                     raise ValueError(f"Invalid column: {field} in table {self.table}")
 
     def execute(self, db: Database) -> ResultSet:
         table = db.get_table(self.table)
 
-        rs = table.get_rows()
+        rs = table.read()
         if self.where:
             col_index = rs.headers.index(self.where.left_hand)
             rs.rows = [
@@ -58,10 +58,10 @@ class Select:
             ]
 
         if self.fields == ["*"]:
-            self.fields = table.get_headers()
+            self.fields = table.headers
             rs.columns = table.columns
         else:
-            col_indexes = [table.get_headers().index(field) for field in self.fields]
+            col_indexes = [table.headers.index(field) for field in self.fields]
             rs.rows = [[row[i] for i in col_indexes] for row in rs.rows]
             rs.columns = [table.columns[i] for i in col_indexes]
 

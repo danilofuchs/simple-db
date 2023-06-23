@@ -26,7 +26,7 @@ class Update:
 
         table = db.get_table(self.table)
         for index, field in enumerate(self.fields):
-            if field not in table.get_headers():
+            if field not in table.headers:
                 raise ValueError(f"Invalid column: {field} in table {self.table}")
 
             value = self.values[index]
@@ -45,22 +45,26 @@ class Update:
                     raise ValueError(f"Invalid date format for column {field}: {value}")
 
         if self.where:
-            if self.where.left_hand not in db.get_table(self.table).get_headers():
+            if self.where.left_hand not in table.headers:
                 raise ValueError(
                     f"Invalid column: {self.where.left_hand} in table {self.table}"
                 )
 
-    def execute(self, db: Database):
+    def execute(self, db: Database) -> int:
         table = db.get_table(self.table)
 
-        rs = table.get_rows()
+        rs = table.read()
 
-        for row_index, row in enumerate(rs.rows):
+        affected = 0
+
+        for row in rs.rows:
             for field_index, field in enumerate(self.fields):
-                col_index = table.get_headers().index(field)
+                col_index = table.headers.index(field)
                 row[col_index] = self.values[field_index]
-            print(row, row_index)
-            table.save_row(row, row_index)
+                affected += 1
+
+            table.save(rs)
+        return affected
 
 
 def parse_update(query: str) -> Update:

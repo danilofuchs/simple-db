@@ -22,7 +22,7 @@ class Insert:
 
         table = db.get_table(self.table)
         for index, field in enumerate(self.fields):
-            if field not in table.get_headers():
+            if field not in table.headers:
                 raise ValueError(f"Invalid column: {field} in table {self.table}")
 
             value = self.values[index]
@@ -45,13 +45,13 @@ class Insert:
 
         with open(table.file, "a") as f:
             f.write("\n")
-            for i, field in enumerate(table.get_headers()):
+            for i, field in enumerate(table.headers):
                 if field in self.fields:
                     f.write(str(self.values[self.fields.index(field)]))
                 else:
                     f.write("")
 
-                if i != len(table.get_headers()) - 1:
+                if i != len(table.headers) - 1:
                     f.write(",")
 
 
