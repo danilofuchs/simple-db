@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 import re
-from typing import Optional
+from typing import List, Optional
 from db import Database
 
 from query import Where, parse_where
@@ -24,15 +24,23 @@ class Delete:
                     f"Invalid column: {self.where.left_hand} in table {self.table}"
                 )
 
-    def execute(self, db: Database) -> int:
+    def execute(self, db: Database) -> List[int]:
         table = db.get_table(self.table)
 
         rs = table.read()
 
         if self.where:
-            rs = rs.apply_where(self.where)
+            filtered = rs.apply_where(self.where)
+        else:
+            filtered = rs
 
-        return len(rs.rows)
+        affected_ids = [row[0] for row in filtered.rows]
+
+        rs.rows = [row for row in rs.rows if row[0] not in affected_ids]
+
+        table.write(rs)
+
+        return affected_ids
 
 
 def parse_delete(query: str) -> Delete:

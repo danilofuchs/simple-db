@@ -57,7 +57,13 @@ Inserted row
 ```
 poetry run python simple_db.py --execute "UPDATE departments SET dept_name = 'Test department 2' WHERE dept_no = 'd999'"
 
-Updated row
+Updated 1 row
+```
+
+```
+poetry run python simple_db.py --execute "DELETE FROM departments WHERE dept_no = 'd999'"
+
+Deleted 1 row
 ```
 
 ## Supported operations

@@ -50,7 +50,7 @@ class Update:
                     f"Invalid column: {self.where.left_hand} in table {self.table}"
                 )
 
-    def execute(self, db: Database) -> int:
+    def execute(self, db: Database) -> List[int]:
         table = db.get_table(self.table)
 
         rs = table.read()
@@ -70,7 +70,7 @@ class Update:
 
         table.write(rs)
 
-        return len(rs.rows)
+        return affected_ids
 
 
 def parse_update(query: str) -> Update:
