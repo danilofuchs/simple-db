@@ -1,0 +1,130 @@
+from datetime import datetime
+import os
+from typing import Any, List
+import mysql.connector
+
+from config import DATA_DIR
+from db import Column, Database, Metadata, ResultSet, Table
+
+
+def import_mysql(user: str, password: str, host: str, port: int, database: str):
+    if not os.path.exists(DATA_DIR):
+        os.makedirs(DATA_DIR)
+
+    with mysql.connector.connect(
+        user=user,
+        password=password,
+        host=host,
+        port=port,
+        database=database,
+    ) as conn:
+        meta = Metadata(
+            database=Database(
+                name=database,
+                tables=[],
+            ),
+        )
+        meta.save()
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT table_name
+                FROM information_schema.tables
+                WHERE table_schema = %s
+                """,
+                (database,),
+            )
+            table_names = cursor.fetchall()
+            for (table_name,) in table_names:
+                file_name = f"{table_name}.csv"
+                new_file = DATA_DIR / file_name
+                if new_file.exists():
+                    print(f"File {file_name} already exists, will not overwrite")
+                    continue
+
+                table = Table(
+                    name=table_name,
+                    columns=[
+                        Column("__id", type="int"),
+                    ],
+                    file=new_file.relative_to(DATA_DIR).as_posix(),
+                    next_id=0,
+                )
+
+                cursor.execute(
+                    """
+                    SELECT column_name, data_type, numeric_scale
+                    FROM information_schema.columns
+                    WHERE table_name = %s
+                    ORDER BY ordinal_position
+                    """,
+                    (table_name,),
+                )
+
+                columns = cursor.fetchall()
+
+                for column_infos in columns:
+                    column_name: str = column_infos[0]
+                    if isinstance(column_name, bytes):
+                        column_name = column_name.decode("utf-8")
+                    column_type: str = column_infos[1].decode("utf-8")
+                    column_numeric_scale: int = column_infos[2]
+
+                    parsed_type = None
+                    if column_type in ["varchar", "char", "enum"]:
+                        parsed_type = "str"
+                    elif column_type == "float":
+                        parsed_type = "float"
+                    elif column_type in ["int", "tinyint", "smallint", "bigint"]:
+                        parsed_type = "int"
+                    elif column_type == "decimal":
+                        if column_numeric_scale == 0:
+                            parsed_type = "int"
+                        else:
+                            parsed_type = "float"
+                    elif column_type in ["date", "datetime", "timestamp"]:
+                        parsed_type = "datetime"
+                    else:
+                        raise ValueError(f"Incompatible column type {column_type}")
+
+                    table.columns.append(
+                        Column(
+                            name=column_name,
+                            type=parsed_type,
+                        )
+                    )
+
+                print(f"Importing data from {table_name}")
+                cursor.execute(f"SELECT * FROM {table_name}")
+                rows = cursor.fetchall()
+
+                imported_rows = []
+                for i, row in enumerate(rows):
+                    table.next_id = i
+                    imported_row: List[Any] = [table.next_id]
+
+                    for col, value in enumerate(row):
+                        col = col + 1  # Skip __id
+                        if isinstance(value, bytes):
+                            value = value.decode("utf-8")
+
+                        if table.columns[col].type == "datetime":
+                            pass  # datetime is already parsed
+                        elif table.columns[col].type == "int":
+                            value = int(value)
+                        elif table.columns[col].type == "float":
+                            value = float(value)
+
+                        imported_row.append(value)
+                    imported_rows.append(imported_row)
+
+                table.next_id += 1
+                table.write(
+                    ResultSet(
+                        table_name=table_name,
+                        columns=table.columns,
+                        rows=imported_rows,
+                    )
+                )
+                meta.database.tables.append(table)
+                meta.save()

@@ -5,6 +5,8 @@ from pathlib import Path
 from config import META_FILE
 from csv_importer import import_csv
 from db import Column, Database, Metadata, Table
+from mysql_importer import import_mysql
+from postgres_importer import import_postgres
 from query import QueryType, determine_query_type
 from query_delete import parse_delete
 from query_insert import parse_insert
@@ -18,13 +20,50 @@ def main():
     parser.add_argument(
         "--import-csv",
         type=str,
-        help="Import CSV files from directory",
+        help="Import CSV files from directory. Input directory name",
+    )
+    parser.add_argument(
+        "--import-pg",
+        type=str,
+        help="Import from Postgres database. Input connection string (e.g. postgresql://user:password@localhost:5432/database)",
+    )
+    parser.add_argument(
+        "--import-mysql",
+        action="store_true",
+        help="Import from MySQL database. Use --user, --password, --host, --port, --database args to specify connection details",
+    )
+    parser.add_argument(
+        "--user", type=str, help="User name for MySQL database", default="root"
+    )
+    parser.add_argument(
+        "--password", type=str, help="Password for MySQL database", default="root"
+    )
+    parser.add_argument(
+        "--host", type=str, help="Host for MySQL database", default="localhost"
+    )
+    parser.add_argument(
+        "--port", type=str, help="Port for MySQL database", default="3306"
+    )
+    parser.add_argument(
+        "--database",
+        type=str,
+        help="Database name for MySQL database",
     )
     args = parser.parse_args()
 
     if args.import_csv:
         csv_dir = Path(args.import_csv)
         import_csv(csv_dir)
+    elif args.import_pg:
+        connection_string = args.import_pg
+        import_postgres(connection_string)
+    elif args.import_mysql:
+        user = args.user
+        password = args.password
+        host = args.host
+        port = args.port
+        database = args.database
+        import_mysql(user, password, host, port, database)
     elif args.execute:
         query = args.execute
         meta = Metadata.load()

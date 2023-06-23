@@ -13,6 +13,18 @@ poetry run python simple_db.py --import-csv "employees"
 
 ```
 
+## Import from Postgres
+
+```
+poetry run python simple_db.py --import-pg postgresql://postgres:123456@localhost/employees
+```
+
+## Import from MySQL
+
+```
+poetry run python simple_db.py --import-mysql --database employees --password 123456
+```
+
 ## Example queries
 
 ```

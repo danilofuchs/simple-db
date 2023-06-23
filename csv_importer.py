@@ -1,11 +1,9 @@
-from config import DATA_DIR, META_FILE
+from config import DATA_DIR
 from db import Column, ColumnType, Database, Metadata, ResultSet, Table
 
 
 import csv
-import dataclasses
 import glob
-import json
 import os
 from datetime import datetime
 from pathlib import Path
