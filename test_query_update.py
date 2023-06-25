@@ -6,7 +6,7 @@ def test_update():
     assert parse_update("UPDATE users SET name = 'John'") == Update(
         table="users",
         fields=["name"],
-        values=["John"],
+        values=["'John'"],
         where=None,
     )
 
@@ -15,7 +15,7 @@ def test_lowercase():
     assert parse_update("update users set name = 'John'") == Update(
         table="users",
         fields=["name"],
-        values=["John"],
+        values=["'John'"],
         where=None,
     )
 
@@ -24,7 +24,7 @@ def test_anycase():
     assert parse_update("Update users SeT name = 'John'") == Update(
         table="users",
         fields=["name"],
-        values=["John"],
+        values=["'John'"],
         where=None,
     )
 
@@ -33,7 +33,7 @@ def test_where():
     assert parse_update("UPDATE users SET name = 'John' WHERE id = 1") == Update(
         table="users",
         fields=["name"],
-        values=["John"],
+        values=["'John'"],
         where=Where(
             left_hand="id",
             right_hand="1",
@@ -50,7 +50,7 @@ def test_where_str():
     ) == Update(
         table="users",
         fields=["name"],
-        values=["John"],
+        values=["'John'"],
         where=Where(
             left_hand="name",
             right_hand="'Johnson'",
@@ -67,7 +67,7 @@ def test_two_fields():
     ) == Update(
         table="users",
         fields=["name", "age"],
-        values=["John", 18],
+        values=["'John'", "18"],
         where=Where(
             left_hand="id",
             right_hand="1",

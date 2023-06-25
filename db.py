@@ -6,24 +6,25 @@ import functools
 import json
 import os
 from pathlib import Path
-from typing import Any, List, Literal, Tuple
+from typing import Any, List, Literal, Tuple, Union
 from tabulate import tabulate
 from config import DATA_DIR, META_FILE
 
 from query import Where, is_quoted_string, unquote_string
 
 
-ColumnType = Literal["int", "float", "str", "datetime"]
+ColumnTypeName = Literal["int", "float", "str", "datetime"]
+ColumnType = Union[int, float, str, datetime, None]
 Direction = Literal["asc", "desc"]
 
 
-Row = Tuple[Any]
+Row = Tuple[ColumnType]
 
 
 @dataclass
 class Column:
     name: str
-    type: ColumnType
+    type: ColumnTypeName
 
 
 @dataclass
@@ -163,7 +164,7 @@ class Table:
             for row in csv_reader:
                 parsed = []
                 for i, col in enumerate(row):
-                    parsed.append(self.__parse_value(col, self.columns[i]))
+                    parsed.append(parse_value(col, self.columns[i]))
                 rows.append(tuple(parsed))
 
             if prefixed:
@@ -229,26 +230,27 @@ class Table:
                 # If the column is not in the fields, it must be a default value
                 row.append("")
                 continue
-            parsed = self.__parse_value(values[values_index], col)
+            parsed = parse_value(values[values_index], col)
             row.append(parsed)
 
         self.next_id += 1
 
         return tuple(row)
 
-    def __parse_value(self, value: str, column: Column) -> Any:
-        if value == "":
-            return None
-        if column.type == "int":
-            return int(value)
-        elif column.type == "float":
-            return float(value)
-        elif column.type == "str":
-            return unquote_string(value)
-        elif column.type == "datetime":
-            return datetime.fromisoformat(unquote_string(value))
-        else:
-            return value
+
+def parse_value(value: str, column: Column) -> ColumnType:
+    if value == "":
+        return None
+    if column.type == "int":
+        return int(value)
+    elif column.type == "float":
+        return float(value)
+    elif column.type == "str":
+        return unquote_string(value)
+    elif column.type == "datetime":
+        return datetime.fromisoformat(unquote_string(value))
+    else:
+        return value
 
 
 @dataclass

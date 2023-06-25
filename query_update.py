@@ -2,9 +2,9 @@ from dataclasses import dataclass
 from datetime import datetime
 import re
 from typing import Any, List, Optional
-from db import Database
+from db import Database, parse_value, validate_where
 
-from query import Where, parse_where
+from query import Where, is_quoted_string, parse_where, unquote_string
 
 
 @dataclass
@@ -30,24 +30,30 @@ class Update:
 
             value = self.values[index]
             col = table.get_column(field)
-            if col.type == "str" and not isinstance(value, str):
-                raise ValueError(f"Invalid type for column {field}: {type(value)}")
-            elif col.type == "int" and not isinstance(value, int):
-                raise ValueError(f"Invalid type for column {field}: {type(value)}")
-            elif col.type == "date":
-                if not isinstance(value, str):
-                    raise ValueError(f"Invalid type for column {field}: {type(value)}")
+            if col.type == "str":
+                if not is_quoted_string(value):
+                    raise ValueError(f"Invalid string for column {field}: {value}")
+            elif col.type == "int":
+                try:
+                    int(value)
+                except ValueError:
+                    raise ValueError(f"Invalid int for column {field}: {value}")
+            elif col.type == "float":
+                try:
+                    float(value)
+                except ValueError:
+                    raise ValueError(f"Invalid float for column {field}: {value}")
+            elif col.type == "datetime":
+                if not is_quoted_string(value):
+                    raise ValueError(f"Invalid string for column {field}: {value}")
 
                 try:
-                    datetime.strptime(value, "%Y-%m-%d")
+                    datetime.fromisoformat(unquote_string(value))
                 except ValueError:
-                    raise ValueError(f"Invalid date format for column {field}: {value}")
+                    raise ValueError(f"Invalid date for column {field}: {value}")
 
         if self.where:
-            if self.where.left_hand not in table.headers:
-                raise ValueError(
-                    f"Invalid column: {self.where.left_hand} in table {self.table}"
-                )
+            validate_where(self.where, db, table.headers, table.name)
 
     def execute(self, db: Database) -> List[int]:
         table = db.get_table(self.table)
@@ -61,13 +67,19 @@ class Update:
 
         affected_ids = [row[0] for row in filtered.rows]
 
+        for id in affected_ids:
+            if not isinstance(id, int):
+                raise ValueError(f"Invalid id {id} in table {self.table}")
+
         new_rows = []
         for row in rs.rows:
             if row[0] in affected_ids:
                 mutable_row = list(row)
                 for field_index, field in enumerate(self.fields):
                     col_index = table.headers.index(field)
-                    mutable_row[col_index] = self.values[field_index]
+                    mutable_row[col_index] = parse_value(
+                        self.values[field_index], table.columns[col_index]
+                    )
                 new_rows.append(mutable_row)
             else:
                 new_rows.append(row)
@@ -109,14 +121,7 @@ def parse_update(query: str) -> Update:
         if sanitized:
             field, value = sanitized.split("=")
             fields.append(field.strip().lower())
-
-            value = value.strip()
-            if value.isnumeric():
-                values.append(int(value.strip()))
-            elif value.startswith("'") and value.endswith("'"):
-                values.append(value.strip().strip("'"))
-            elif value.startswith('"') and value.endswith('"'):
-                values.append(value.strip().strip('"'))
+            values.append(value.strip())
 
     where = None
     where_part = re.search(r"where\s+(.*)", query, re.IGNORECASE)

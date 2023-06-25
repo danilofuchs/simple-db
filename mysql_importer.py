@@ -130,8 +130,8 @@ def import_mysql(user: str, password: str, host: str, port: int, database: str):
                 table.write(
                     ResultSet(
                         table_name=table_name,
-                        columns=table.columns,
-                        rows=imported_rows,
+                        columns=tuple(table.columns),
+                        rows=tuple(imported_rows),
                     )
                 )
                 meta.database.tables.append(table)

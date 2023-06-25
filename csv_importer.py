@@ -99,8 +99,8 @@ def import_csv(csv_dir: Path):
             table.write(
                 ResultSet(
                     table_name=table_name,
-                    columns=table.columns,
-                    rows=rows,
+                    columns=tuple(table.columns),
+                    rows=tuple(rows),
                 )
             )
 

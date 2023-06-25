@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from datetime import datetime
 import re
 from typing import List, Optional
 from db import Database
@@ -35,6 +34,10 @@ class Delete:
             filtered = rs
 
         affected_ids = [row[0] for row in filtered.rows]
+
+        for id in affected_ids:
+            if not isinstance(id, int):
+                raise ValueError(f"Invalid id {id} in table {self.table}")
 
         rs.rows = tuple(row for row in rs.rows if row[0] not in affected_ids)
 

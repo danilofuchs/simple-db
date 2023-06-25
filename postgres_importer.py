@@ -120,8 +120,8 @@ def import_postgres(connection_string: str):
                 table.write(
                     ResultSet(
                         table_name=table_name,
-                        columns=table.columns,
-                        rows=imported_rows,
+                        columns=tuple(table.columns),
+                        rows=tuple(imported_rows),
                     )
                 )
                 meta.database.tables.append(table)
