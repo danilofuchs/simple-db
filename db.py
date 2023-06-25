@@ -10,7 +10,7 @@ from typing import Any, List, Literal, Tuple
 from tabulate import tabulate
 from config import DATA_DIR, META_FILE
 
-from query import Where, is_quoted_string
+from query import Where, is_quoted_string, unquote_string
 
 
 ColumnType = Literal["int", "float", "str", "datetime"]
@@ -115,13 +115,13 @@ class ResultSet:
             # If the right hand is not a column, it must be a value
             right_hand_val = where.right_hand
             if left_hand_col.type == "str":
-                right_hand_val = right_hand_val.strip("'").strip('"')
+                right_hand_val = unquote_string(right_hand_val)
             elif left_hand_col.type == "int":
                 right_hand_val = int(right_hand_val)
             elif left_hand_col.type == "float":
                 right_hand_val = float(right_hand_val)
             elif left_hand_col.type == "datetime":
-                right_hand_val = to_datetime(right_hand_val.strip("'").strip('"'))
+                right_hand_val = to_datetime(unquote_string(right_hand_val))
 
         if where.operator == "=":
             return left_hand_val == right_hand_val
@@ -196,7 +196,18 @@ class Table:
                 lineterminator="\n",
             )
             csv_writer.writerow(self.headers)
-            csv_writer.writerows(rs.rows)
+            for row in rs.rows:
+                str_row = [
+                    value.isoformat()
+                    if isinstance(value, datetime)
+                    else f"{value:.4f}"
+                    if isinstance(value, float)
+                    else str(value)
+                    if value is not None
+                    else ""
+                    for value in row
+                ]
+                csv_writer.writerow(str_row)
 
     def get_column(self, name: str) -> Column:
         for column in self.columns:
@@ -205,24 +216,37 @@ class Table:
 
         raise ValueError(f"Column {name} not found in table {self.name}")
 
-    def create_row(self, values: List[str]) -> Row:
-        if len(values) != len(self.columns) - 1:
-            raise ValueError("Invalid number of values")
+    def create_row(self, values: Tuple[str], fields: Tuple[str]) -> Row:
+        row = []
+        for col in self.columns:
+            if col.name == "__id":
+                row.append(self.next_id)
+                continue
 
-        row = [self.next_id]
-        for i, value in enumerate(values):
-            row.append(self.__parse_value(value, self.columns[i + 1]))
+            try:
+                values_index = get_column_index(fields, col.name)
+            except ValueError:
+                # If the column is not in the fields, it must be a default value
+                row.append("")
+                continue
+            parsed = self.__parse_value(values[values_index], col)
+            row.append(parsed)
+
         self.next_id += 1
 
         return tuple(row)
 
     def __parse_value(self, value: str, column: Column) -> Any:
+        if value == "":
+            return None
         if column.type == "int":
             return int(value)
         elif column.type == "float":
             return float(value)
+        elif column.type == "str":
+            return unquote_string(value)
         elif column.type == "datetime":
-            return datetime.fromisoformat(value)
+            return datetime.fromisoformat(unquote_string(value))
         else:
             return value
 

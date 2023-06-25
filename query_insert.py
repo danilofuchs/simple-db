@@ -5,6 +5,7 @@ import re
 from typing import Any, List
 
 from db import Database
+from query import is_quoted_string, unquote_string
 
 
 @dataclass
@@ -30,25 +31,36 @@ class Insert:
 
             value = self.values[index]
             col = table.get_column(field)
-            if col.type == "str" and not isinstance(value, str):
-                raise ValueError(f"Invalid type for column {field}: {type(value)}")
-            elif col.type == "int" and not isinstance(value, int):
-                raise ValueError(f"Invalid type for column {field}: {type(value)}")
-            elif col.type == "date":
-                if not isinstance(value, str):
-                    raise ValueError(f"Invalid type for column {field}: {type(value)}")
+            if col.type == "str":
+                if not is_quoted_string(value):
+                    raise ValueError(f"Invalid string for column {field}: {value}")
+            elif col.type == "int":
+                try:
+                    int(value)
+                except ValueError:
+                    raise ValueError(f"Invalid int for column {field}: {value}")
+            elif col.type == "float":
+                try:
+                    float(value)
+                except ValueError:
+                    raise ValueError(f"Invalid float for column {field}: {value}")
+            elif col.type == "datetime":
+                if not is_quoted_string(value):
+                    raise ValueError(f"Invalid string for column {field}: {value}")
 
                 try:
-                    datetime.fromisoformat(value)
+                    datetime.fromisoformat(unquote_string(value))
                 except ValueError:
-                    raise ValueError(f"Invalid date format for column {field}: {value}")
+                    raise ValueError(f"Invalid date for column {field}: {value}")
 
     def execute(self, db: Database) -> None:
         table = db.get_table(self.table)
 
         rs = table.read()
 
-        rs.rows = rs.rows + tuple([table.create_row(self.values)])
+        rs.rows = rs.rows + tuple(
+            [table.create_row(tuple(self.values), tuple(self.fields))]
+        )
 
         table.write(rs)
 
@@ -87,14 +99,6 @@ def parse_insert(query: str) -> Insert:
         sanitized = values_part.strip("(),").strip()
 
         if sanitized:
-            if sanitized.isnumeric():
-                sanitized = int(sanitized)
-            elif sanitized.startswith('"') and sanitized.endswith('"'):
-                sanitized = sanitized.strip('"')
-            elif sanitized.startswith("'") and sanitized.endswith("'"):
-                sanitized = sanitized.strip("'")
-            else:
-                raise ValueError(f"Invalid value: {sanitized}")
             values.append(sanitized)
 
     return Insert(

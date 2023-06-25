@@ -129,3 +129,10 @@ def is_quoted_string(string: str) -> bool:
     return (string[0] == '"' and string[-1] == '"') or (
         string[0] == "'" and string[-1] == "'"
     )
+
+
+def unquote_string(string: str) -> str:
+    strip = string.strip()
+    if is_quoted_string(strip):
+        return strip[1:-1]
+    return strip
