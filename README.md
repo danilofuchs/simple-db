@@ -43,17 +43,22 @@ First, [install Poetry](https://python-poetry.org/docs/)
 
 Then, install dependencies:
 
-```
+```bash
 poetry install
 ```
 
 ### Using pip
 
-```
+```bash
 pip install -r requirements.txt
+
+# For development
+pip install -r dev-requirements.txt
 ```
 
-> To regenerate: `poetry export --with dev --without-hashes --format=requirements.txt -o requirements.txt`
+> To regenerate: `poetry export --without-hashes --format=requirements.txt -o requirements.txt`
+
+> `poetry export --with dev --without-hashes --format=requirements.txt -o dev-requirements.txt`
 
 ## Import existing data
 
@@ -172,7 +177,7 @@ d006                                  110854
 ### SELECT with JOIN USING
 
 ```
- poetry run python simple_db.py --execute 'SELECT departments.dept_no, dept_manager.emp_no FROM departments JOIN dept_manager USING (dept_no) WHERE departments.dept_no = "d006"'
+poetry run python simple_db.py --execute 'SELECT departments.dept_no, dept_manager.emp_no FROM departments JOIN dept_manager USING (dept_no) WHERE departments.dept_no = "d006"'
 
 departments.dept_no      dept_manager.emp_no
 ---------------------  ---------------------
@@ -195,7 +200,7 @@ Inserted row
 ```
 poetry run python simple_db.py --execute "UPDATE departments SET dept_name = 'Test department 2' WHERE dept_no = 'd999'"
 
-Updated 1 row
+Updated 1 row: __id=8
 ```
 
 ### DELETE
@@ -203,7 +208,7 @@ Updated 1 row
 ```
 poetry run python simple_db.py --execute "DELETE FROM departments WHERE dept_no = 'd999'"
 
-Deleted 1 row
+Deleted 1 row: __id=9
 ```
 
 ## Assignment (Portuguese)

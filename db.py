@@ -14,7 +14,7 @@ from query import Where, is_quoted_string, unquote_string
 
 
 ColumnTypeName = Literal["int", "float", "str", "datetime"]
-ColumnType = Union[int, float, str, datetime, None]
+ColumnType = Union[int, float, str, datetime]
 Direction = Literal["asc", "desc"]
 
 
@@ -240,7 +240,14 @@ class Table:
 
 def parse_value(value: str, column: Column) -> ColumnType:
     if value == "":
-        return None
+        if column.type == "datetime":
+            return datetime(1970, 1, 1, 0, 0, 0, 0)
+        elif column.type == "int":
+            return 0
+        elif column.type == "float":
+            return 0.0
+        else:
+            return ""
     if column.type == "int":
         return int(value)
     elif column.type == "float":
