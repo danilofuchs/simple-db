@@ -8,6 +8,15 @@ Imports data from CSV files, MySQL or PostgreSQL databases.
 
 Stores data internally in CSV files.
 
+## Supported data types
+
+- `int`
+- `float`
+- `str`
+  - variable length
+- `datetime`
+  - `YYYY-MM-DD HH:MM:SS`
+
 ## Supported operations
 
 - `SELECT` - select data from table
@@ -46,19 +55,25 @@ pip install -r requirements.txt
 
 > To regenerate: `poetry export --with dev --without-hashes --format=requirements.txt -o requirements.txt`
 
-## Import from CSV
+## Import existing data
+
+The database must be initialized with tables from another database.
+
+Recommended `employees` database for testing: https://github.com/datacharmer/test_db
+
+### Import from CSV
 
 ```
 poetry run python simple_db.py --import-csv "employees"
 ```
 
-## Import from Postgres
+### Import from Postgres
 
 ```
 poetry run python simple_db.py --import-pg postgresql://postgres:123456@localhost/employees
 ```
 
-## Import from MySQL
+### Import from MySQL
 
 ```
 poetry run python simple_db.py --import-mysql --database employees --password 123456
